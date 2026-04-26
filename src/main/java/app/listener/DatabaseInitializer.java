@@ -1,5 +1,6 @@
 package app.listener;
 
+import app.model.Course;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
@@ -24,6 +25,7 @@ public class DatabaseInitializer implements ServletContextListener {
             // 1. Sync Tables
             new JdbcRepository<>(User.class).updateSchema();
             new JdbcRepository<>(Student.class).updateSchema();
+            new JdbcRepository<>(Course.class).updateSchema();
             System.out.println("[DB ENGINE] Schemas synced successfully.");
 
             // 2. FIXED: Bootstrap default Admin with existence check

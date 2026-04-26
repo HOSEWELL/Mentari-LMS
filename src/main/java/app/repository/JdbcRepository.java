@@ -32,12 +32,10 @@ public class JdbcRepository<T> implements GenericRepository<T> {
     }
 
     @Override
-    public void save(T entity) {
+    public T save(T entity) {
         try (Connection conn = DatabaseConnection.getConnection()) {
-            // 1. Primary Key Check to prevent duplicates
             Field idField = null;
             for (Field f : type.getDeclaredFields()) {
-                // Matches the corrected annotation attribute name 'primaryKey'
                 if (f.isAnnotationPresent(MentariColumn.class) && f.getAnnotation(MentariColumn.class).primaryKey()) {
                     idField = f;
                     break;
@@ -47,50 +45,52 @@ public class JdbcRepository<T> implements GenericRepository<T> {
             if (idField != null) {
                 idField.setAccessible(true);
                 Object idValue = idField.get(entity);
-                // If ID is already set, we stop the save to prevent duplicate INSERTs
-                // In a full production app, you would add an UPDATE query here instead
                 if (idValue != null) {
                     System.out.println("Record with ID " + idValue + " already exists. Skipping insert.");
-                    return;
+                    return entity;
                 }
             }
 
-            // 2. Prepare Insert Logic
             StringBuilder columns = new StringBuilder();
             StringBuilder placeholders = new StringBuilder();
             List<Object> values = new ArrayList<>();
 
-            // Inside your save method - make sure you aren't trying to insert 'id'
-// Change this part to ensure it uses the ANNOTATION name, not the FIELD name
             for (Field field : type.getDeclaredFields()) {
                 if (field.isAnnotationPresent(MentariColumn.class)) {
                     MentariColumn ann = field.getAnnotation(MentariColumn.class);
-                    if (ann.primaryKey()) continue; // Skip ID
+                    if (ann.primaryKey()) continue;
 
                     field.setAccessible(true);
-                    columns.append(ann.name()).append(","); // Use ann.name()
+                    columns.append(ann.name()).append(",");
                     placeholders.append("?").append(",");
                     values.add(field.get(entity));
                 }
             }
 
-            // Remove trailing commas
             if (columns.length() > 0) {
                 columns.setLength(columns.length() - 1);
                 placeholders.setLength(placeholders.length() - 1);
 
                 String sql = "INSERT INTO " + tableName + " (" + columns + ") VALUES (" + placeholders + ")";
 
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                     for (int i = 0; i < values.size(); i++) {
                         ps.setObject(i + 1, values.get(i));
                     }
                     ps.executeUpdate();
+
+                    try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                        if (generatedKeys.next() && idField != null) {
+                            long generatedId = generatedKeys.getLong(1);
+                            idField.set(entity, generatedId);
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return entity;
     }
 
     @Override
@@ -108,7 +108,6 @@ public class JdbcRepository<T> implements GenericRepository<T> {
                         String colName = field.getAnnotation(MentariColumn.class).name();
                         field.setAccessible(true);
 
-                        // Handle potential type mismatches (Long vs Int)
                         Object value = rs.getObject(colName);
                         if (value != null) {
                             if (field.getType() == Long.class && value instanceof Integer) {
@@ -122,9 +121,60 @@ public class JdbcRepository<T> implements GenericRepository<T> {
                 list.add(instance);
             }
         } catch (Exception e) {
-            System.err.println("Error in findAll for " + tableName);
             e.printStackTrace();
         }
         return list;
+    }
+
+    /**
+     * Updates an existing record in the database.
+     * Required for enabling password changes in the Student Portal.
+     */
+    @Override
+    public void update(T entity) {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            StringBuilder setClause = new StringBuilder();
+            List<Object> values = new ArrayList<>();
+            Field idField = null;
+            String idColumnName = "";
+
+            for (Field field : type.getDeclaredFields()) {
+                if (field.isAnnotationPresent(MentariColumn.class)) {
+                    MentariColumn ann = field.getAnnotation(MentariColumn.class);
+                    field.setAccessible(true);
+
+                    // Identify the Primary Key for the WHERE clause
+                    if (ann.primaryKey()) {
+                        idField = field;
+                        idColumnName = ann.name();
+                        continue;
+                    }
+
+                    // Add other columns to the SET clause
+                    setClause.append(ann.name()).append(" = ?, ");
+                    values.add(field.get(entity));
+                }
+            }
+
+            if (setClause.length() > 0 && idField != null) {
+                // Remove trailing comma and space
+                setClause.setLength(setClause.length() - 2);
+
+                String sql = "UPDATE " + tableName + " SET " + setClause + " WHERE " + idColumnName + " = ?";
+
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    // Inject values for the SET clause
+                    for (int i = 0; i < values.size(); i++) {
+                        ps.setObject(i + 1, values.get(i));
+                    }
+                    // Inject the Primary Key value for the WHERE clause
+                    ps.setObject(values.size() + 1, idField.get(entity));
+
+                    ps.executeUpdate();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

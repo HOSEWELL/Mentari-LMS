@@ -5,8 +5,8 @@ import app.framework.MentariColumn;
 
 @MentariTable(name = "users")
 public class User {
-    @MentariColumn(name = "id")
-    private int id;
+    @MentariColumn(name = "id", primaryKey = true)
+    private Long id;
 
     @MentariColumn(name = "username")
     private String username;
@@ -14,10 +14,13 @@ public class User {
     @MentariColumn(name = "password")
     private String password;
 
-    @MentariColumn(name = "role") 
+    @MentariColumn(name = "role")
     private String role;
 
-    // Standard Getters and Setters
+    public User() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
     public String getUsername() { return username; }

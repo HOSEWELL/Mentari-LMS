@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Manage Students | Mentari LMS</title>
+    <title>Manage Courses | Mentari LMS</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -15,10 +15,9 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--light-bg);
             margin: 0;
-            display: flex; /* Matches your dashboard */
+            display: flex;
         }
 
-        /* Fixed Logic: Matches Dashboard's flex-grow */
         .main-content {
             flex-grow: 1;
             padding: 40px;
@@ -27,7 +26,6 @@
             box-sizing: border-box;
         }
 
-        /* Added a wrapper for the table like your dashboard cards */
         .content-card {
             background: white;
             padding: 30px;
@@ -44,12 +42,8 @@
             padding-bottom: 15px;
         }
 
-        h2 {
-            margin: 0;
-            color: #2c3e50;
-        }
+        h2 { margin: 0; color: #2c3e50; }
 
-        /* Table Styling */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -79,9 +73,7 @@
             transition: opacity 0.2s;
         }
 
-        .btn-add:hover {
-            opacity: 0.9;
-        }
+        .btn-add:hover { opacity: 0.9; }
 
         .success-msg {
             background-color: #d4edda;
@@ -91,6 +83,10 @@
             margin-bottom: 20px;
             border-left: 5px solid #28a745;
         }
+
+        .form-group { margin-bottom: 15px; }
+        .form-label { display:block; margin-bottom:5px; font-weight:600; }
+        .form-control { width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -100,68 +96,70 @@
     <main class="main-content">
         <div class="content-card">
             <c:choose>
+                <%-- Registration Form View --%>
                 <c:when test="${param.action == 'new'}">
                     <div class="header-flex">
-                        <h2><i class="fas fa-user-plus"></i> Register Student</h2>
+                        <h2><i class="fas fa-book-medical"></i> Register New Course</h2>
                     </div>
 
-                    <form action="${pageContext.request.contextPath}/admin/students" method="POST">
-                        <div style="margin-bottom: 15px;">
-                            <label style="display:block; margin-bottom:5px; font-weight:600;">Full Name</label>
-                            <input type="text" name="fullName" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px;" required>
+                    <form action="${pageContext.request.contextPath}/admin/courses" method="POST">
+                        <div class="form-group">
+                            <label class="form-label">Course Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Java Enterprise Edition" required>
                         </div>
-                        <div style="margin-bottom: 15px;">
-                            <label style="display:block; margin-bottom:5px; font-weight:600;">Email</label>
-                            <input type="email" name="email" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px;" required>
+                        <div class="form-group">
+                            <label class="form-label">Course Code</label>
+                            <input type="text" name="code" class="form-control" placeholder="e.g. JEE-101" required>
                         </div>
-                        <div style="margin-bottom: 20px;">
-                            <label style="display:block; margin-bottom:5px; font-weight:600;">Registration Number</label>
-                            <input type="text" name="regNumber" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px;" required>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="4" placeholder="Briefly describe the course objectives..."></textarea>
                         </div>
-                        <button type="submit" class="btn-add" style="border:none; cursor:pointer;">Save Student</button>
-                        <a href="${pageContext.request.contextPath}/admin/students" style="margin-left:15px; color:#6c757d; text-decoration:none;">Cancel</a>
+                        <button type="submit" class="btn-add" style="border:none; cursor:pointer;">Save Course</button>
+                        <a href="${pageContext.request.contextPath}/admin/courses" style="margin-left:15px; color:#6c757d; text-decoration:none;">Cancel</a>
                     </form>
                 </c:when>
 
+                <%-- Course Table List View --%>
                 <c:otherwise>
                     <div class="header-flex">
-                        <h2><i class="fas fa-users"></i> Registered Students</h2>
-                        <a href="${pageContext.request.contextPath}/admin/students?action=new" class="btn-add">
-                            <i class="fas fa-plus"></i> New Student
+                        <h2><i class="fas fa-book"></i> Course Catalog</h2>
+                        <a href="${pageContext.request.contextPath}/admin/courses?action=new" class="btn-add">
+                            <i class="fas fa-plus"></i> New Course
                         </a>
                     </div>
 
-                    <%-- Check for Success or Error parameters --%>
+                    <%-- Success or Error message --%>
                     <c:if test="${param.success eq 'true'}">
                         <div class="alert alert-success" role="alert">
-                            <i class="fas fa-check-circle"></i> Student registered successfully!
+                            <i class="fas fa-check-circle"></i> Course has been successfully added to the catalog.
                         </div>
                     </c:if>
 
-                    <c:if test="${param.error eq 'blocked_name'}">
+                    <c:if test="${param.error eq 'invalid_name'}">
                         <div class="alert alert-danger" role="alert">
-                            <i class="fas fa-user-slash"></i> <strong>Registration Denied:</strong> This name is either empty or restricted.
+                            <i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> Course name must be at least 5 characters long.
                         </div>
                     </c:if>
 
                     <table>
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Reg Number</th>
+                                <th>Code</th>
+                                <th>Course Name</th>
+                                <th>Description</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <c:forEach var="s" items="${students}">
+                            <c:forEach var="c" items="${courses}">
                                 <tr>
-                                    <td><strong>${s.fullName}</strong></td>
-                                    <td>${s.email}</td>
-                                    <td><code>${s.regNumber}</code></td>
+                                    <td><code>${c.code}</code></td>
+                                    <td><strong>${c.name}</strong></td>
+                                    <td>${c.description}</td>
                                 </tr>
                             </c:forEach>
-                            <c:if test="${empty students}">
-                                <tr><td colspan="3" style="text-align:center; padding: 30px; color: #999;">No student records found.</td></tr>
+                            <c:if test="${empty courses}">
+                                <tr><td colspan="3" style="text-align:center; padding: 30px; color: #999;">No courses available in the system.</td></tr>
                             </c:if>
                         </tbody>
                     </table>

@@ -119,18 +119,33 @@
                 <small style="color: green;">Live Registry Count</small>
             </div>
 
+            <%-- DYNAMIC ACTIVE COURSES CARD --%>
             <div class="card">
                 <i class="fas fa-book-open icon-box"></i>
                 <h3>Active Courses</h3>
-                <p class="value">18</p>
-                <small>4 Pending updates</small>
+                <p class="value">
+                    <c:out value="${activeCourses}" default="0" />
+                </p>
+                <small style="color: green;">Live Course Catalog</small>
             </div>
 
+
+            <%-- PENDING REQUESTS (Referrals) --%>
+                <div class="card" onclick="window.location.href='${pageContext.request.contextPath}/admin/deferrals'" style="cursor: pointer;">
+                    <i class="fas fa-tasks icon-box"></i>
+                    <h3>Pending Requests</h3>
+                    <p class="value">7</p> <%-- Replace with ${pendingRequests} if you have the variable --%>
+                    <small style="color: #e67e22;">Requires attention</small>
+                </div>
+
+            <%-- DYNAMIC ACTIVE SESSIONS CARD --%>
             <div class="card">
-                <i class="fas fa-tasks icon-box"></i>
-                <h3>Pending Requests</h3>
-                <p class="value">7</p>
-                <small style="color: #e67e22;">Requires attention</small>
+                <i class="fas fa-signal icon-box"></i>
+                <h3>Active Sessions</h3>
+                <p class="value">
+                    <c:out value="${activeSessions}" default="1" />
+                </p>
+                <small style="color: #007bff;">Users Online Now</small>
             </div>
         </div>
 
@@ -138,7 +153,7 @@
             <h2>Recent Activity</h2>
             <div class="card" style="padding: 15px;">
                 <p>User <strong>admin</strong> updated database schema successfully.</p>
-                <p>Default admin verified via <strong>@h.k_rajah8</strong> credentials.</p>
+                <p>Current Course Count: <strong>${activeCourses}</strong></p>
             </div>
         </section>
     </main>

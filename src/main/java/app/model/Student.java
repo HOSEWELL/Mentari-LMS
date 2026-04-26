@@ -17,8 +17,13 @@ public class Student {
     @MentariColumn(name = "registration_number")
     private String regNumber;
 
+    // ADD THIS FIELD TO LINK TO USERS TABLE
+    @MentariColumn(name = "user_id")
+    private Long userId;
+
     public Student() {}
 
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getFullName() { return fullName; }
@@ -27,4 +32,7 @@ public class Student {
     public void setEmail(String email) { this.email = email; }
     public String getRegNumber() { return regNumber; }
     public void setRegNumber(String regNumber) { this.regNumber = regNumber; }
+
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 }
