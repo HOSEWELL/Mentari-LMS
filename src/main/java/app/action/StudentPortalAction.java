@@ -1,6 +1,5 @@
 package app.action;
 
-import app.model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;

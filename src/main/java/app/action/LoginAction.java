@@ -2,6 +2,7 @@ package app.action;
 
 import app.model.User;
 import app.repository.JdbcRepository;
+import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -14,8 +15,8 @@ import java.util.List;
 @WebServlet("/login")
 public class LoginAction extends HttpServlet {
 
-    // Repository to access the users table
-    private final JdbcRepository<User> userRepo = new JdbcRepository<>(User.class);
+    @Inject
+    private JdbcRepository<User> userRepo;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

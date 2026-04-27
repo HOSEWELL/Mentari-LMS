@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MentariColumn {
     String name();
-    boolean primaryKey() default false; // Change 'isPrimaryKey' to 'primaryKey'
+    boolean primaryKey() default false;
 }

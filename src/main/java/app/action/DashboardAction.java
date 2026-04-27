@@ -2,8 +2,9 @@ package app.action;
 
 import app.listener.AppSessionListener;
 import app.model.Student;
-import app.model.Course; // Ensure you import your Course model
+import app.model.Course;
 import app.repository.JdbcRepository;
+import jakarta.inject.Inject; // Added
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -15,6 +16,13 @@ import java.util.List;
 @WebServlet("/admin-dashboard")
 public class DashboardAction extends HttpServlet {
 
+    // --- FIELD INJECTION ---
+    @Inject
+    private JdbcRepository<Student> studentRepo;
+
+    @Inject
+    private JdbcRepository<Course> courseRepo;
+
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         // 1. Get the session count from the listener
@@ -23,16 +31,12 @@ public class DashboardAction extends HttpServlet {
 
         // 2. Fetch counts from the database
         try {
-            // Initialize repositories
-            JdbcRepository<Student> studentRepo = new JdbcRepository<>(Student.class);
-            JdbcRepository<Course> courseRepo = new JdbcRepository<>(Course.class);
-
             // Fetch and count Students
             List<Student> students = studentRepo.findAll();
             int studentCount = (students != null) ? students.size() : 0;
             req.setAttribute("totalStudents", studentCount);
 
-            // Fetch and count Courses (Replacing the hardcoded values)
+            // Fetch and count Courses
             List<Course> courses = courseRepo.findAll();
             int courseCount = (courses != null) ? courses.size() : 0;
 

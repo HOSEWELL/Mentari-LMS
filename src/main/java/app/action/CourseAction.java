@@ -16,11 +16,23 @@ import java.util.List;
 @WebServlet("/admin/courses")
 public class CourseAction extends BaseAction<Course> {
 
-    @Inject
-    @ValidatorQualifier(ValidatorQualifier.ValidationChoice.COURSE)
-    private Validate<String> courseValidator;
+    private final Validate<String> courseValidator;
+    private final JdbcRepository<Course> courseRepo;
 
-    private final JdbcRepository<Course> courseRepo = new JdbcRepository<>(Course.class);
+    // constructor for Servlet Container
+    public CourseAction() {
+        this.courseValidator = null;
+        this.courseRepo = null;
+    }
+
+    // --- CONSTRUCTOR INJECTION ---
+    @Inject
+    public CourseAction(@ValidatorQualifier(ValidatorQualifier.ValidationChoice.COURSE) Validate<String> courseValidator,
+                        JdbcRepository<Course> courseRepo )
+    {
+        this.courseValidator = courseValidator;
+        this.courseRepo = courseRepo;
+    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -31,15 +43,12 @@ public class CourseAction extends BaseAction<Course> {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // Pass the injected validator to the base framework
         Course course = super.serializeForm(req.getParameterMap(), courseValidator);
 
         if (course != null) {
             courseRepo.save(course);
-            System.out.println("MENTARI >>> New Course Added: " + course.getName());
             resp.sendRedirect(req.getContextPath() + "/admin/courses?success=true");
         } else {
-            // Validation failed (name too short)
             resp.sendRedirect(req.getContextPath() + "/admin/courses?error=invalid_name");
         }
     }

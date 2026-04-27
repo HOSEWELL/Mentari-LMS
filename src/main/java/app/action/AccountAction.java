@@ -2,7 +2,8 @@ package app.action;
 
 import app.framework.BaseAction;
 import app.model.User;
-import app.repository.JdbcRepository; // Import your repository
+import app.repository.JdbcRepository;
+import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,8 +13,8 @@ import java.io.IOException;
 @WebServlet("/student/account")
 public class AccountAction extends BaseAction<User> {
 
-    // Declare and initialize userRepo to fix the "Cannot resolve symbol" error
-    private final JdbcRepository<User> userRepo = new JdbcRepository<>(User.class);
+    @Inject
+    private JdbcRepository<User> userRepo;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

@@ -1,30 +1,48 @@
 package app.repository;
 
-import app.database.DatabaseConnection;
 import app.framework.MentariTable;
 import app.framework.MentariColumn;
 import app.util.DatabaseUtils;
+import jakarta.enterprise.inject.Vetoed;
+import jakarta.inject.Inject;
+import javax.sql.DataSource;
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Vetoed
 public class JdbcRepository<T> implements GenericRepository<T> {
+
+    @Inject
+    private DataSource dataSource;
+
     private final Class<T> type;
     private final String tableName;
 
-    public JdbcRepository(Class<T> type) {
+    // --- NO-ARG CONSTRUCTOR FOR CDI PROXIES ---
+    public JdbcRepository() {
+        this.type = null;
+        this.tableName = null;
+    }
+
+    // UPDATED: Constructor now accepts DataSource to prevent NullPointerException
+    public JdbcRepository(Class<T> type, DataSource dataSource) {
         this.type = type;
-        if (type.isAnnotationPresent(MentariTable.class)) {
+        this.dataSource = dataSource; // Assigning the passed data source
+
+        if (type != null && type.isAnnotationPresent(MentariTable.class)) {
             this.tableName = type.getAnnotation(MentariTable.class).name();
-        } else {
+        } else if (type != null) {
             this.tableName = type.getSimpleName().toLowerCase() + "s";
+        } else {
+            this.tableName = null;
         }
     }
 
     @Override
     public void updateSchema() {
-        try (Connection conn = DatabaseConnection.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
             DatabaseUtils.createTableIfNotExists(conn, type);
         } catch (Exception e) {
             e.printStackTrace();
@@ -33,7 +51,7 @@ public class JdbcRepository<T> implements GenericRepository<T> {
 
     @Override
     public T save(T entity) {
-        try (Connection conn = DatabaseConnection.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
             Field idField = null;
             for (Field f : type.getDeclaredFields()) {
                 if (f.isAnnotationPresent(MentariColumn.class) && f.getAnnotation(MentariColumn.class).primaryKey()) {
@@ -46,7 +64,6 @@ public class JdbcRepository<T> implements GenericRepository<T> {
                 idField.setAccessible(true);
                 Object idValue = idField.get(entity);
                 if (idValue != null) {
-                    System.out.println("Record with ID " + idValue + " already exists. Skipping insert.");
                     return entity;
                 }
             }
@@ -97,7 +114,7 @@ public class JdbcRepository<T> implements GenericRepository<T> {
     public List<T> findAll() {
         List<T> list = new ArrayList<>();
         String sql = "SELECT * FROM " + tableName;
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = dataSource.getConnection();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
 
@@ -107,7 +124,6 @@ public class JdbcRepository<T> implements GenericRepository<T> {
                     if (field.isAnnotationPresent(MentariColumn.class)) {
                         String colName = field.getAnnotation(MentariColumn.class).name();
                         field.setAccessible(true);
-
                         Object value = rs.getObject(colName);
                         if (value != null) {
                             if (field.getType() == Long.class && value instanceof Integer) {
@@ -126,13 +142,9 @@ public class JdbcRepository<T> implements GenericRepository<T> {
         return list;
     }
 
-    /**
-     * Updates an existing record in the database.
-     * Required for enabling password changes in the Student Portal.
-     */
     @Override
     public void update(T entity) {
-        try (Connection conn = DatabaseConnection.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
             StringBuilder setClause = new StringBuilder();
             List<Object> values = new ArrayList<>();
             Field idField = null;
@@ -143,33 +155,26 @@ public class JdbcRepository<T> implements GenericRepository<T> {
                     MentariColumn ann = field.getAnnotation(MentariColumn.class);
                     field.setAccessible(true);
 
-                    // Identify the Primary Key for the WHERE clause
                     if (ann.primaryKey()) {
                         idField = field;
                         idColumnName = ann.name();
                         continue;
                     }
 
-                    // Add other columns to the SET clause
                     setClause.append(ann.name()).append(" = ?, ");
                     values.add(field.get(entity));
                 }
             }
 
             if (setClause.length() > 0 && idField != null) {
-                // Remove trailing comma and space
                 setClause.setLength(setClause.length() - 2);
 
                 String sql = "UPDATE " + tableName + " SET " + setClause + " WHERE " + idColumnName + " = ?";
-
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    // Inject values for the SET clause
                     for (int i = 0; i < values.size(); i++) {
                         ps.setObject(i + 1, values.get(i));
                     }
-                    // Inject the Primary Key value for the WHERE clause
                     ps.setObject(values.size() + 1, idField.get(entity));
-
                     ps.executeUpdate();
                 }
             }

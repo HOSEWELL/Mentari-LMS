@@ -17,12 +17,30 @@ import java.util.List;
 @WebServlet("/admin/students")
 public class StudentAction extends BaseAction<Student> {
 
-    @Inject
-    @ValidatorQualifier(ValidatorQualifier.ValidationChoice.STUDENT)
     private Validate<String> studentValidator;
+    private JdbcRepository<Student> studentRepo;
+    private JdbcRepository<User> userRepo;
 
-    private final JdbcRepository<Student> studentRepo = new JdbcRepository<>(Student.class);
-    private final JdbcRepository<User> userRepo = new JdbcRepository<>(User.class);
+    public StudentAction() {
+        super();
+    }
+
+    // ---SETTER INJECTION FOR VALIDATOR ---
+    @Inject
+    public void setStudentValidator(@ValidatorQualifier(ValidatorQualifier.ValidationChoice.STUDENT) Validate<String> studentValidator) {
+        this.studentValidator = studentValidator;
+    }
+
+    // --- TASK: SETTER INJECTION FOR REPOSITORIES ---
+    @Inject
+    public void setStudentRepo(JdbcRepository<Student> studentRepo) {
+        this.studentRepo = studentRepo;
+    }
+
+    @Inject
+    public void setUserRepo(JdbcRepository<User> userRepo) {
+        this.userRepo = userRepo;
+    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
