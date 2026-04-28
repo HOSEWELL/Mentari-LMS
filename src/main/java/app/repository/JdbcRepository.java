@@ -3,7 +3,7 @@ package app.repository;
 import app.framework.MentariTable;
 import app.framework.MentariColumn;
 import app.util.DatabaseUtils;
-import jakarta.enterprise.inject.Vetoed;
+import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
@@ -11,37 +11,47 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@Vetoed
+@Dependent
 public class JdbcRepository<T> implements GenericRepository<T> {
 
-    @Inject
-    private DataSource dataSource;
+    private final DataSource dataSource;
+    private Class<T> type;
+    private String tableName;
 
-    private final Class<T> type;
-    private final String tableName;
 
-    // --- NO-ARG CONSTRUCTOR FOR CDI PROXIES ---
+//     * NO-ARG CONSTRUCTOR Required by the CDI container to create proxies.
+
     public JdbcRepository() {
+        this.dataSource = null;
         this.type = null;
         this.tableName = null;
     }
 
-    // UPDATED: Constructor now accepts DataSource to prevent NullPointerException
-    public JdbcRepository(Class<T> type, DataSource dataSource) {
-        this.type = type;
-        this.dataSource = dataSource; // Assigning the passed data source
+    /**
+     * CONSTRUCTOR INJECTION
+     * The container automatically provides the DataSource from your DataSourceProvider.
+     */
+    @Inject
+    public JdbcRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
+    /**
+     * Sets the entity type and determines the table name.
+     * Call this in the @Inject constructor or setter of your Action classes.
+     */
+    public void setType(Class<T> type) {
+        this.type = type;
         if (type != null && type.isAnnotationPresent(MentariTable.class)) {
             this.tableName = type.getAnnotation(MentariTable.class).name();
         } else if (type != null) {
             this.tableName = type.getSimpleName().toLowerCase() + "s";
-        } else {
-            this.tableName = null;
         }
     }
 
     @Override
     public void updateSchema() {
+        if (dataSource == null || type == null) return;
         try (Connection conn = dataSource.getConnection()) {
             DatabaseUtils.createTableIfNotExists(conn, type);
         } catch (Exception e) {
@@ -51,6 +61,7 @@ public class JdbcRepository<T> implements GenericRepository<T> {
 
     @Override
     public T save(T entity) {
+        if (dataSource == null || type == null) return entity;
         try (Connection conn = dataSource.getConnection()) {
             Field idField = null;
             for (Field f : type.getDeclaredFields()) {
@@ -63,7 +74,8 @@ public class JdbcRepository<T> implements GenericRepository<T> {
             if (idField != null) {
                 idField.setAccessible(true);
                 Object idValue = idField.get(entity);
-                if (idValue != null) {
+                // Check if ID is already set (e.g., for updates or existing records)
+                if (idValue != null && (idValue instanceof Long && (Long) idValue > 0)) {
                     return entity;
                 }
             }
@@ -113,6 +125,8 @@ public class JdbcRepository<T> implements GenericRepository<T> {
     @Override
     public List<T> findAll() {
         List<T> list = new ArrayList<>();
+        if (dataSource == null || type == null) return list;
+
         String sql = "SELECT * FROM " + tableName;
         try (Connection conn = dataSource.getConnection();
              Statement st = conn.createStatement();
@@ -144,6 +158,7 @@ public class JdbcRepository<T> implements GenericRepository<T> {
 
     @Override
     public void update(T entity) {
+        if (dataSource == null || type == null) return;
         try (Connection conn = dataSource.getConnection()) {
             StringBuilder setClause = new StringBuilder();
             List<Object> values = new ArrayList<>();

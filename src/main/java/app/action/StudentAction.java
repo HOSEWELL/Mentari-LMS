@@ -5,8 +5,8 @@ import app.model.Student;
 import app.model.User;
 import app.repository.JdbcRepository;
 import app.util.validation.Validate;
-import app.util.validation.ValidatorQualifier;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,7 +27,7 @@ public class StudentAction extends BaseAction<Student> {
 
     // ---SETTER INJECTION FOR VALIDATOR ---
     @Inject
-    public void setStudentValidator(@ValidatorQualifier(ValidatorQualifier.ValidationChoice.STUDENT) Validate<String> studentValidator) {
+    public void setStudentValidator(@Named("Student") Validate<String> studentValidator) {
         this.studentValidator = studentValidator;
     }
 

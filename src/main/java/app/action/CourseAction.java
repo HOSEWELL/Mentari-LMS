@@ -4,8 +4,8 @@ import app.framework.BaseAction;
 import app.model.Course;
 import app.repository.JdbcRepository;
 import app.util.validation.Validate;
-import app.util.validation.ValidatorQualifier;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,19 +19,18 @@ public class CourseAction extends BaseAction<Course> {
     private final Validate<String> courseValidator;
     private final JdbcRepository<Course> courseRepo;
 
-    // constructor for Servlet Container
     public CourseAction() {
         this.courseValidator = null;
         this.courseRepo = null;
     }
 
-    // --- CONSTRUCTOR INJECTION ---
+    // --- TASK: CONSTRUCTOR INJECTION ---
     @Inject
-    public CourseAction(@ValidatorQualifier(ValidatorQualifier.ValidationChoice.COURSE) Validate<String> courseValidator,
-                        JdbcRepository<Course> courseRepo )
-    {
+    public CourseAction(@Named("Course") Validate<String> courseValidator, JdbcRepository<Course> courseRepo) {
         this.courseValidator = courseValidator;
         this.courseRepo = courseRepo;
+        // Set type so the repository knows which table to use
+        this.courseRepo.setType(Course.class);
     }
 
     @Override

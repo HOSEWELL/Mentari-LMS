@@ -1,9 +1,10 @@
 package app.util.validation;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Named;
 
 @ApplicationScoped
-@ValidatorQualifier(ValidatorQualifier.ValidationChoice.STUDENT)
+@Named("Student")
 public class ValidateStudent implements Validate<String> {
 
     @Override
