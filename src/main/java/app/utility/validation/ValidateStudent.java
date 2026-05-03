@@ -1,4 +1,4 @@
-package app.util.validation;
+package app.utility.validation;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;

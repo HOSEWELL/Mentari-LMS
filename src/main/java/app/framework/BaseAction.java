@@ -1,6 +1,6 @@
 package app.framework;
 
-import app.util.validation.Validate;
+import app.utility.validation.Validate;
 import jakarta.servlet.http.HttpServlet;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;

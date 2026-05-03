@@ -1,9 +1,10 @@
 package app.action;
 
+import app.bean.CourseService;
 import app.framework.BaseAction;
 import app.model.Course;
-import app.repository.JdbcRepository;
-import app.util.validation.Validate;
+import app.utility.validation.Validate;
+import jakarta.ejb.EJB;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.servlet.ServletException;
@@ -16,26 +17,16 @@ import java.util.List;
 @WebServlet("/admin/courses")
 public class CourseAction extends BaseAction<Course> {
 
-    private final Validate<String> courseValidator;
-    private final JdbcRepository<Course> courseRepo;
+    @EJB
+    private CourseService courseService;
 
-    public CourseAction() {
-        this.courseValidator = null;
-        this.courseRepo = null;
-    }
-
-    // --- TASK: CONSTRUCTOR INJECTION ---
     @Inject
-    public CourseAction(@Named("Course") Validate<String> courseValidator, JdbcRepository<Course> courseRepo) {
-        this.courseValidator = courseValidator;
-        this.courseRepo = courseRepo;
-        // Set type so the repository knows which table to use
-        this.courseRepo.setType(Course.class);
-    }
+    @Named("Course")
+    private Validate<String> courseValidator;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        List<Course> courses = courseRepo.findAll();
+        List<Course> courses = courseService.findAll();
         req.setAttribute("courses", courses);
         req.getRequestDispatcher("/WEB-INF/views/admin/courses.jsp").forward(req, resp);
     }
@@ -43,9 +34,8 @@ public class CourseAction extends BaseAction<Course> {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Course course = super.serializeForm(req.getParameterMap(), courseValidator);
-
         if (course != null) {
-            courseRepo.save(course);
+            courseService.save(course);
             resp.sendRedirect(req.getContextPath() + "/admin/courses?success=true");
         } else {
             resp.sendRedirect(req.getContextPath() + "/admin/courses?error=invalid_name");

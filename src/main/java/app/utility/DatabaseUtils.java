@@ -1,4 +1,4 @@
-package app.util;
+package app.utility;
 
 import app.framework.MentariTable;
 import app.framework.MentariColumn;

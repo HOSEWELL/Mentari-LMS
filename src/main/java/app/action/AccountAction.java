@@ -1,9 +1,9 @@
 package app.action;
 
+import app.bean.UserService;
 import app.framework.BaseAction;
 import app.model.User;
-import app.repository.JdbcRepository;
-import jakarta.inject.Inject;
+import jakarta.ejb.EJB;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,8 +13,8 @@ import java.io.IOException;
 @WebServlet("/student/account")
 public class AccountAction extends BaseAction<User> {
 
-    @Inject
-    private JdbcRepository<User> userRepo;
+    @EJB
+    private UserService userService;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -25,17 +25,11 @@ public class AccountAction extends BaseAction<User> {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String currentPassword = req.getParameter("currentPassword");
         String newPassword = req.getParameter("newPassword");
-
         User sessionUser = (User) req.getSession().getAttribute("loggedInUser");
 
-        // 1. Verify current password
         if (sessionUser != null && sessionUser.getPassword().equals(currentPassword)) {
-
-            // 2. Update password and save to DB
             sessionUser.setPassword(newPassword);
-            userRepo.update(sessionUser);
-
-            // 3. Clear session and force re-login with the new password
+            userService.update(sessionUser);
             req.getSession().invalidate();
             resp.sendRedirect(req.getContextPath() + "/login?success=password_updated");
         } else {

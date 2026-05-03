@@ -1,4 +1,4 @@
-package app.util.validation;
+package app.utility.validation;
 
 public interface Validate<T> {
 

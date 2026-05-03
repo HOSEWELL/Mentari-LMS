@@ -1,4 +1,4 @@
-package app.util.validation;
+package app.utility.validation;
 
 import jakarta.inject.Qualifier;
 import java.lang.annotation.ElementType;
