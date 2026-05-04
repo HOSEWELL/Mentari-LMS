@@ -119,7 +119,12 @@
                 </li>
                 <li>
                     <a href="${pageContext.request.contextPath}/admin/deferrals" class="nav-link">
-                        <i class="fas fa-clipboard-list"></i> Review Requests
+                        <i class="fas fa-clipboard-list"></i> Review Deferrals
+                    </a>
+                </li>
+                <li>
+                    <a href="${pageContext.request.contextPath}/admin/audit-trail" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i> Audit Trail
                     </a>
                 </li>
             </c:when>

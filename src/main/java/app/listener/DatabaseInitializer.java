@@ -1,5 +1,6 @@
 package app.listener;
 
+import app.model.AuditTrail;
 import app.model.Course;
 import app.model.Student;
 import app.model.User;
@@ -23,6 +24,7 @@ public class DatabaseInitializer implements ServletContextListener {
             DatabaseUtils.createTableIfNotExists(conn, User.class);
             DatabaseUtils.createTableIfNotExists(conn, Student.class);
             DatabaseUtils.createTableIfNotExists(conn, Course.class);
+            DatabaseUtils.createTableIfNotExists(conn, AuditTrail.class);
             System.out.println("[DB ENGINE] Schemas synced successfully.");
         } catch (Exception e) {
             e.printStackTrace();
