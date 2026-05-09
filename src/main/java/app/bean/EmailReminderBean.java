@@ -9,21 +9,22 @@ import java.util.Date;
 public class EmailReminderBean {
 
     @EJB
-    private AuditTrailBean auditTrailBean;
+    private NotificationBean notificationBean;
 
-    // Fires every day at 8:00 AM
     @Schedule(second = "0", minute = "0", hour = "8", persistent = false)
     public void dailySystemCheck() {
-        String msg = "Daily system check completed at: " + new Date();
-        System.out.println("MENTARI >>> " + msg);
-        auditTrailBean.save(msg);
+        String subject = "Mentari System Health Check";
+        String body = "System is running normally as of " + new Date();
+
+        // This sends the email AND logs to Audit Trail via NotificationBean
+        notificationBean.sendAdminEmail(subject, body);
     }
 
-    // Fires every Monday at 9:00 AM — reminds admin to review pending requests
     @Schedule(second = "0", minute = "0", hour = "9", dayOfWeek = "Mon", persistent = false)
     public void weeklyAdminReminder() {
-        String msg = "Weekly reminder: Admin should review pending deferral requests.";
-        System.out.println("MENTARI >>> " + msg);
-        auditTrailBean.save(msg);
+        String subject = "LMS Action Required: Pending Deferrals";
+        String body = "Hello Hosewell,\n\nPlease review the pending student deferral requests for this week.";
+
+        notificationBean.sendAdminEmail(subject, body);
     }
 }

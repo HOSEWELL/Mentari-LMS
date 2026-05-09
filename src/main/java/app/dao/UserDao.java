@@ -1,61 +1,35 @@
 package app.dao;
 
 import app.model.User;
+import app.utility.bootstrap.InitBootstrap;
+import app.utility.db.DataSourceHelper;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
-import javax.sql.DataSource;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 @Dependent
-public class UserDao {
+public class UserDao extends GenericDao<User, Long> {
 
     @Inject
-    private DataSource dataSource;
-
-    public User save(User user) {
-        String sql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, user.getUsername());
-            ps.setString(2, user.getPassword());
-            ps.setString(3, user.getRole());
-            ps.executeUpdate();
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                if (keys.next()) user.setId(keys.getLong(1));
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return user;
+    public UserDao(@InitBootstrap DataSourceHelper ds) {
+        super(User.class);
+        // This is the critical line: it populates the 'ds' field in GenericDao
+        this.ds = ds;
     }
 
     public void update(User user) {
         String sql = "UPDATE users SET username=?, password=?, role=? WHERE id=?";
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = ds.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getPassword());
             ps.setString(3, user.getRole());
             ps.setLong(4, user.getId());
             ps.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
-    }
-
-    public List<User> findAll() {
-        List<User> list = new ArrayList<>();
-        String sql = "SELECT * FROM users";
-        try (Connection conn = dataSource.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) {
-                User u = new User();
-                u.setId(rs.getLong("id"));
-                u.setUsername(rs.getString("username"));
-                u.setPassword(rs.getString("password"));
-                u.setRole(rs.getString("role"));
-                list.add(u);
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return list;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
