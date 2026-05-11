@@ -21,7 +21,6 @@ public class AuthFilter implements Filter {
         boolean loggedIn = (session != null && session.getAttribute("loggedInUser") != null);
 
         String loginURI = req.getContextPath() + "/login";
-        String registerURI = req.getContextPath() + "/register"; // Optional: if you have a register page
 
         String requestURI = req.getRequestURI();
 
