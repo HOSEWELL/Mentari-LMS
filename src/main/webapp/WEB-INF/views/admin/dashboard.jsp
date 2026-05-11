@@ -129,15 +129,15 @@
                 <small style="color: green;">Live Course Catalog</small>
             </div>
 
-
-            <%-- PENDING REQUESTS (Referrals) --%>
-                <div class="card" onclick="window.location.href='${pageContext.request.contextPath}/admin/deferrals'" style="cursor: pointer;">
-                    <i class="fas fa-tasks icon-box"></i>
-                    <h3>Pending Requests</h3>
-                    <p class="value">7</p> <%-- Replace with ${pendingRequests} if you have the variable --%>
-                    <small style="color: #e67e22;">Requires attention</small>
-                </div>
-
+            <%-- PENDING DEFERRALS (Dynamic from DB) --%>
+            <div class="card" onclick="window.location.href='${pageContext.request.contextPath}/admin/deferrals'" style="cursor: pointer;">
+                <i class="fas fa-tasks icon-box"></i>
+                <h3>Pending Requests</h3>
+                <p class="value">
+                    <c:out value="${pendingDeferrals}" default="0" />
+                </p>
+                <small style="color: #e67e22;">Requires attention</small>
+            </div>
             <%-- DYNAMIC ACTIVE SESSIONS CARD --%>
             <div class="card">
                 <i class="fas fa-signal icon-box"></i>

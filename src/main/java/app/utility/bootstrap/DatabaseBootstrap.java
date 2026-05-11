@@ -5,6 +5,7 @@ import app.utility.db.TableGenerator;
 import app.utility.helper.ClassScanner;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
+
 import java.util.Set;
 
 @InitBootstrap
@@ -21,14 +22,19 @@ public class DatabaseBootstrap implements Bootstrap {
     @Override
     public void process() {
         try {
-            // Match the method name to the one in ClassScanner
-            Set<Class<?>> entities = clazzScanner.scanForDbTables("app.model");
+            System.out.println("MENTARI ENGINE >>> Bootstrapping database...");
 
-            // Match the method name to the one in TableGenerator
+            Set<Class<?>> entities =
+                    clazzScanner.scanForDbTables("app.model");
+
+            System.out.println("MENTARI ENGINE >>> Found " + entities.size() + " entities");
+
             TableGenerator.generateTables(ds.getConnection(), entities);
 
-            System.out.println("MENTARI ENGINE >>> Database Tables Synced.");
+            System.out.println("MENTARI ENGINE >>> Database Tables Synced Successfully.");
+
         } catch (Exception e) {
+            System.err.println("MENTARI ENGINE >>> Bootstrap failed");
             e.printStackTrace();
         }
     }
