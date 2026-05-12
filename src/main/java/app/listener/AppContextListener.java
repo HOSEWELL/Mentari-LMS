@@ -19,7 +19,7 @@ public class AppContextListener implements ServletContextListener {
     public void contextInitialized(ServletContextEvent sce) {
         System.out.println("********** MENTARI SYSTEM STARTING **********");
 
-        // This automatically finds DatabaseBootstrap and FolderBootstrap
+        // This automatically finds DatabaseBootstrap   
         for (Bootstrap bootstrap : bootstraps) {
             bootstrap.process();
         }

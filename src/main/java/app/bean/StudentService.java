@@ -4,10 +4,12 @@ import app.dao.StudentDao;
 import app.dao.UserDao;
 import app.model.Student;
 import app.model.User;
+import app.utility.validation.Validate;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.List;
 
 @Stateless
@@ -19,15 +21,23 @@ public class StudentService {
     @Inject
     private UserDao userDao;
 
-    // CDI Event — fires NotificationBean.onStudentEnrolled()
+    @Inject
+    @Named("Student")
+    private Validate<String> studentValidator;
+
     @Inject
     private Event<Student> studentEvent;
 
     @EJB
     private AuditTrailBean auditTrailBean;
 
-    public void enrollStudent(Student student) {
-        // 1. Create login account
+    public boolean enrollStudent(Student student) {
+        if (student == null ||
+                !studentValidator.name(student.getFullName())) {
+            return false;
+        }
+
+        // Create login account
         User studentUser = new User();
         studentUser.setUsername(student.getEmail());
         studentUser.setPassword("@Mentari2026");
@@ -36,17 +46,23 @@ public class StudentService {
         User savedUser = userDao.save(studentUser);
         student.setUserId(savedUser.getId());
 
-        // 2. Save student profile
+        // Save student profile
         studentDao.save(student);
 
-        // 3. Fire CDI event — NotificationBean will observe and send email
+        // Fire CDI event
         studentEvent.fire(student);
 
-        // 4. Log to audit trail
-        auditTrailBean.save("Student enrolled: " + student.getFullName()
-                + " (" + student.getEmail() + ")");
+        // Audit trail
+        auditTrailBean.save(
+                "Student enrolled: " + student.getFullName()
+                        + " (" + student.getEmail() + ")"
+        );
 
-        System.out.println("MENTARI >>> Student enrolled: " + student.getFullName());
+        System.out.println(
+                "MENTARI >>> Student enrolled: " + student.getFullName()
+        );
+
+        return true;
     }
 
     public List<Student> findAll() {
