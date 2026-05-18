@@ -1,0 +1,43 @@
+package app.framework.routing;
+
+import java.lang.reflect.Method;
+
+public class ActionMap {
+
+    private Class<?> action;
+
+    private Method method;
+
+    private String httpMethod;
+
+    private String pathPattern;
+
+    public ActionMap(
+            Class<?> action,
+            Method method,
+            String httpMethod,
+            String pathPattern
+    ) {
+
+        this.action = action;
+        this.method = method;
+        this.httpMethod = httpMethod;
+        this.pathPattern = pathPattern;
+    }
+
+    public Class<?> getAction() {
+        return action;
+    }
+
+    public Method getMethod() {
+        return method;
+    }
+
+    public String getHttpMethod() {
+        return httpMethod;
+    }
+
+    public String getPathPattern() {
+        return pathPattern;
+    }
+}

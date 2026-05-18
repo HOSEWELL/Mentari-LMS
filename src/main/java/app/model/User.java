@@ -1,30 +1,84 @@
 package app.model;
 
-import app.framework.MentariTable;
-import app.framework.MentariColumn;
+import app.framework.annotation.MentariForm;
+import app.framework.annotation.MentariFormField;
+import app.framework.annotation.MentariTableColumn;
+import app.framework.annotation.MentariTableView;
 
-@MentariTable(name = "users")
-public class User {
-    @MentariColumn(name = "id", primaryKey = true)
-    private Long id;
+import jakarta.persistence.*;
 
-    @MentariColumn(name = "username")
+@Entity
+@Table(name = "users")
+
+@MentariTableView(
+        title = "Users"
+)
+
+@MentariForm(
+        actionUrl = "/app/users/save",
+        label = "Save User"
+)
+public class User extends BaseEntity {
+
+    @MentariTableColumn(
+            label = "Username"
+    )
+    @MentariFormField(
+            label = "Username",
+            placeholder = "Enter username",
+            hidden = false
+    )
+    @Column(nullable = false, unique = true)
     private String username;
 
-    @MentariColumn(name = "password")
+    @MentariTableColumn(
+            label = "Password",
+            hidden = true
+    )
+    @MentariFormField(
+            label = "Password",
+            placeholder = "Enter password",
+            type = "password",
+            hidden = false
+    )
+    @Column(nullable = false)
     private String password;
 
-    @MentariColumn(name = "role")
+    @MentariTableColumn(
+            label = "Role"
+    )
+    @MentariFormField(
+            label = "Role",
+            placeholder = "ADMIN or STUDENT",
+            hidden = true
+    )
+    @Column(nullable = false)
     private String role;
 
-    public User() {}
+    public User() {
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 }

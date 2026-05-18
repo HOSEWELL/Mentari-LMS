@@ -3,17 +3,27 @@ package app.action;
 import app.bean.CourseService;
 import app.bean.DeferralService;
 import app.bean.StudentService;
-import app.listener.AppSessionListener;
-import jakarta.ejb.EJB;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
-@WebServlet("/admin-dashboard")
-public class DashboardAction extends HttpServlet {
+import app.framework.annotation.Action;
+import app.framework.annotation.ActionGetMethod;
+
+import app.framework.response.ActionResponse;
+import app.framework.response.DashboardCard;
+import app.framework.response.DashboardResponse;
+
+import app.listener.AppSessionListener;
+
+import jakarta.ejb.EJB;
+
+import java.util.List;
+
+@Action(
+        value = "dashboard",
+        label = "Dashboard",
+        roles = {"ADMIN"},
+        showLink = true
+)
+public class DashboardAction {
 
     @EJB
     private StudentService studentService;
@@ -24,19 +34,58 @@ public class DashboardAction extends HttpServlet {
     @EJB
     private DeferralService deferralService;
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    @ActionGetMethod("index")
+    public ActionResponse dashboard() {
 
-        // Expose loggedInUser to request scope for dashboard.jsp header
-        req.setAttribute("loggedInUser", req.getSession().getAttribute("loggedInUser"));
+        DashboardResponse response =
+                new DashboardResponse(
+                        "Mentari Dashboard",
+                        List.of(
 
-        req.setAttribute("activeSessions", AppSessionListener.getActiveSessionCount());
-        req.setAttribute("totalStudents", studentService.findAll().size());
-        req.setAttribute("activeCourses", courseService.findAll().size());
+                                new DashboardCard(
+                                        "Total Students",
+                                        String.valueOf(
+                                                studentService
+                                                        .findAll()
+                                                        .size()
+                                        ),
+                                        "fas fa-users",
+                                        "#2563eb"
+                                ),
 
-        long pendingDeferrals = deferralService.countPendingDeferrals();
-        req.setAttribute("pendingDeferrals", pendingDeferrals);
-        
-        req.getRequestDispatcher("/WEB-INF/views/admin/dashboard.jsp").forward(req, resp);
+                                new DashboardCard(
+                                        "Courses",
+                                        String.valueOf(
+                                                courseService
+                                                        .findAll()
+                                                        .size()
+                                        ),
+                                        "fas fa-book",
+                                        "#16a34a"
+                                ),
+
+                                new DashboardCard(
+                                        "Pending Deferrals",
+                                        String.valueOf(
+                                                deferralService
+                                                        .countPendingDeferrals()
+                                        ),
+                                        "fas fa-clock",
+                                        "#f59e0b"
+                                ),
+
+                                new DashboardCard(
+                                        "Active Sessions",
+                                        String.valueOf(
+                                                AppSessionListener
+                                                        .getActiveSessionCount()
+                                        ),
+                                        "fas fa-signal",
+                                        "#dc2626"
+                                )
+                        )
+                );
+
+        return new ActionResponse(response);
     }
 }

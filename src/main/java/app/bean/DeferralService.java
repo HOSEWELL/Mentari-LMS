@@ -27,25 +27,33 @@ public class DeferralService {
 
     public void submitRequest(Deferral deferral) {
         deferral.setStatus("PENDING");
-        deferral.setSubmittedAt(new Date().toString());
+        deferral.setSubmittedAt(new Date());
 
         deferralDao.save(deferral);
 
-        auditTrailBean.save("Deferral submitted by: " + deferral.getStudentName());
+        auditTrailBean.save(
+                "Deferral submitted by: "
+                        + deferral.getStudent().getFullName()
+        );
     }
+
+
+
 
     public List<Deferral> findAll() {
         // Inherited from GenericDao
         return deferralDao.findAll();
     }
 
+
+
     public List<Deferral> findByStudentId(Long studentId) {
         // Filter using GenericDao.findAll()
         return deferralDao.findAll()
                 .stream()
                 .filter(deferral ->
-                        deferral.getStudentId() != null
-                                && deferral.getStudentId().equals(studentId))
+                        deferral.getStudent() != null
+                                && deferral.getStudent().getId().equals(studentId))
                 .toList();
     }
 
@@ -71,13 +79,8 @@ public class DeferralService {
         }
     }
 
-    private Deferral findById(Long id) {
-        return deferralDao.findAll()
-                .stream()
-                .filter(deferral ->
-                        deferral.getId() != null
-                                && deferral.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+    public Deferral findById(Long id) {
+
+        return deferralDao.findById(id);
     }
 }

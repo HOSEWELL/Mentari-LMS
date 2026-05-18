@@ -1,28 +1,38 @@
 package app.action;
 
 import app.bean.AuditTrailBean;
+
+import app.framework.annotation.Action;
+import app.framework.annotation.ActionGetMethod;
+import app.framework.annotation.ProtectedRoute;
+
+import app.framework.response.ActionResponse;
+
 import app.model.AuditTrail;
-import jakarta.ejb.EJB;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.List;
 
-@WebServlet("/admin/audit-trail")
-public class AuditTrailAction extends HttpServlet {
+import jakarta.inject.Inject;
 
-    @EJB
+@Action(
+        value = "audit-trail",
+        label = "Audit Trail",
+        roles = {"ADMIN"},
+        showLink = true
+)
+
+@ProtectedRoute(
+        roles = {"ADMIN"}
+)
+public class AuditTrailAction {
+
+    @Inject
     private AuditTrailBean auditTrailBean;
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-        List<AuditTrail> logs = auditTrailBean.findAll();
-        req.setAttribute("logs", logs);
-        req.getRequestDispatcher("/WEB-INF/views/admin/audit_trail.jsp")
-                .forward(req, resp);
+    @ActionGetMethod("list")
+    public ActionResponse list() {
+
+        return new ActionResponse(
+                AuditTrail.class,
+                auditTrailBean.findAll()
+        );
     }
 }

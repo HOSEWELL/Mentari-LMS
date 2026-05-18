@@ -1,51 +1,174 @@
 package app.model;
 
-import app.framework.MentariColumn;
-import app.framework.MentariTable;
+import app.framework.annotation.*;
 
-@MentariTable(name = "deferrals")
-public class Deferral {
+import jakarta.persistence.*;
 
-    @MentariColumn(name = "id", primaryKey = true)
-    private Long id;
+import java.time.LocalDate;
+import java.util.Date;
 
-    @MentariColumn(name = "student_id")
-    private Long studentId;
+@Entity
+@Table(name = "deferrals")
 
-    @MentariColumn(name = "student_name")
-    private String studentName;
+@MentariTableView(
+        title = "Deferrals",
+        addAction = "/app/deferrals/student"
+)
 
-    @MentariColumn(name = "start_date")
-    private String startDate;
+@MentariForm(
+        actionUrl = "/app/deferrals/submit",
+        label = "Submit Deferral"
+)
+public class Deferral extends BaseEntity {
 
-    @MentariColumn(name = "end_date")
-    private String endDate;
+    @MentariTableColumn(
+            label = "Student"
+    )
+    @MentariRelationshipLabel("fullName")
+    @MentariSelect(
+            entity = Student.class,
+            labelField = "fullName"
+    )
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "studentId")
+    private Student student;
 
-    @MentariColumn(name = "reason")
+    /*
+     * =========================
+     * START DATE
+     * =========================
+     */
+    @MentariTableColumn(
+            label = "Start Date"
+    )
+    @MentariFormField(
+            label = "Start Date",
+            type = "date"
+    )
+    @Column(name = "startDate")
+    private LocalDate startDate;
+
+    /*
+     * =========================
+     * END DATE
+     * =========================
+     */
+    @MentariTableColumn(
+            label = "End Date"
+    )
+    @MentariFormField(
+            label = "End Date",
+            type = "date"
+    )
+    @Column(name = "endDate")
+    private LocalDate endDate;
+
+    /*
+     * =========================
+     * REASON
+     * =========================
+     */
+    @MentariTableColumn(
+            label = "Reason"
+    )
+    @MentariFormField(
+            label = "Reason",
+            placeholder = "Enter reason"
+    )
+    @Column(columnDefinition = "TEXT")
     private String reason;
 
-    @MentariColumn(name = "status")
+    /*
+     * =========================
+     * STATUS
+     * =========================
+     */
+    @MentariTableColumn(
+            label = "Status"
+    )
+    @Column(nullable = false)
     private String status;
 
-    @MentariColumn(name = "submitted_at")
-    private String submittedAt;
+    /*
+     * =========================
+     * SUBMITTED AT
+     * =========================
+     */
+    @MentariTableColumn(
+            label = "Submitted At"
+    )
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "submittedAt")
+    private Date submittedAt;
 
-    public Deferral() {}
+    public Deferral() {
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getStudentId() { return studentId; }
-    public void setStudentId(Long studentId) { this.studentId = studentId; }
-    public String getStudentName() { return studentName; }
-    public void setStudentName(String studentName) { this.studentName = studentName; }
-    public String getStartDate() { return startDate; }
-    public void setStartDate(String startDate) { this.startDate = startDate; }
-    public String getEndDate() { return endDate; }
-    public void setEndDate(String endDate) { this.endDate = endDate; }
-    public String getReason() { return reason; }
-    public void setReason(String reason) { this.reason = reason; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public String getSubmittedAt() { return submittedAt; }
-    public void setSubmittedAt(String submittedAt) { this.submittedAt = submittedAt; }
+        this.status = "PENDING";
+
+        this.submittedAt = new Date();
+    }
+
+    /*
+     * =========================
+     * GETTERS & SETTERS
+     * =========================
+     */
+
+    public Student getStudent() {
+        return student;
+    }
+
+    public void setStudent(Student student) {
+        this.student = student;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(
+            LocalDate startDate
+    ) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(
+            LocalDate endDate
+    ) {
+        this.endDate = endDate;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(
+            String reason
+    ) {
+        this.reason = reason;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(
+            String status
+    ) {
+        this.status = status;
+    }
+
+    public Date getSubmittedAt() {
+        return submittedAt;
+    }
+
+    public void setSubmittedAt(
+            Date submittedAt
+    ) {
+        this.submittedAt = submittedAt;
+    }
 }

@@ -1,90 +1,146 @@
 package app.action;
 
 import app.bean.DeferralService;
+import app.framework.annotation.*;
+import app.framework.response.ActionResponse;
+import app.framework.response.RedirectResponse;
 import app.model.Deferral;
 import app.model.Student;
-import app.model.User;
-import jakarta.ejb.EJB;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+
+import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
-import java.util.List;
 
-@WebServlet({"/student/defer", "/admin/deferrals"})
-public class DeferralAction extends HttpServlet {
+@Action(
+        value = "deferrals",
+        label = "Deferrals",
+        roles = {"ADMIN", "STUDENT"},
+        showLink = true
+)
+public class DeferralAction {
 
-    @EJB
+    @Inject
     private DeferralService deferralService;
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    /*
+     * =========================
+     * ADMIN VIEW
+     * =========================
+     */
+    @ActionGetMethod("admin")
+    @ProtectedRoute(roles = {"ADMIN"})
+    public ActionResponse admin() {
 
-        HttpSession session = req.getSession(false);
-        User loggedInUser = (User) session.getAttribute("loggedInUser");
-        req.setAttribute("loggedInUser", loggedInUser);
-
-        String uri = req.getRequestURI();
-
-        if (uri.contains("/admin/deferrals")) {
-            // Admin sees all requests
-            List<Deferral> deferrals = deferralService.findAll();
-            req.setAttribute("deferrals", deferrals);
-            req.getRequestDispatcher("/WEB-INF/views/admin/deferrals.jsp")
-                    .forward(req, resp);
-
-        } else {
-            // Student sees only their own
-            Student student = (Student) session.getAttribute("loggedInStudent");
-            if (student != null) {
-                List<Deferral> myDeferrals = deferralService.findByStudentId(student.getId());
-                req.setAttribute("myDeferrals", myDeferrals);
-            }
-            req.getRequestDispatcher("/WEB-INF/views/student/defer.jsp")
-                    .forward(req, resp);
-        }
+        return new ActionResponse(
+                Deferral.class,
+                deferralService.findAll()
+        );
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    /*
+     * =========================
+     * STUDENT VIEW
+     * =========================
+     */
+    @ActionGetMethod("student")
+    @ProtectedRoute(roles = {"STUDENT"})
+    public ActionResponse student(
+            HttpSession session
+    ) {
 
-        String uri = req.getRequestURI();
+        Student loggedStudent =
+                (Student) session.getAttribute(
+                        "loggedInStudent"
+                );
 
-        if (uri.contains("/admin/deferrals")) {
-            // Admin approving or rejecting
-            Long id = Long.parseLong(req.getParameter("id"));
-            String action = req.getParameter("action");
-            String studentName = req.getParameter("studentName");
+        return new ActionResponse(
+                Deferral.class,
+                deferralService.findByStudentId(
+                        loggedStudent.getId()
+                )
+        );
+    }
 
-            if ("approve".equals(action)) {
-                deferralService.approve(id, studentName);
-            } else if ("reject".equals(action)) {
-                deferralService.reject(id, studentName);
-            }
-            resp.sendRedirect(req.getContextPath() + "/admin/deferrals?success=true");
+    /*
+     * =========================
+     * SUBMIT REQUEST
+     * =========================
+     */
+    @ActionPostMethod("submit")
+    @ProtectedRoute(roles = {"STUDENT"})
+    public RedirectResponse submit(
+            @ActionRequestBody
+            Deferral deferral,
 
-        } else {
-            // Student submitting a new request
-            HttpSession session = req.getSession(false);
-            Student student = (Student) session.getAttribute("loggedInStudent");
+            HttpSession session
+    ) {
 
-            Deferral deferral = new Deferral();
-            deferral.setStartDate(req.getParameter("startDate"));
-            deferral.setEndDate(req.getParameter("endDate"));
-            deferral.setReason(req.getParameter("reason"));
+        Student loggedStudent =
+                (Student) session.getAttribute(
+                        "loggedInStudent"
+                );
 
-            if (student != null) {
-                deferral.setStudentId(student.getId());
-                deferral.setStudentName(student.getFullName());
-            }
+        deferral.setStudent(loggedStudent);
 
-            deferralService.submitRequest(deferral);
-            resp.sendRedirect(req.getContextPath() + "/student/defer?success=true");
+        deferralService.submitRequest(deferral);
+
+        return new RedirectResponse(
+                "/Mentari/app/deferrals/student"
+        );
+    }
+
+    /*
+     * =========================
+     * APPROVE
+     * =========================
+     */
+    @ActionGetMethod("approve/{id}")
+    @ProtectedRoute(roles = {"ADMIN"})
+    public RedirectResponse approve(
+            @ActionPathParam("id")
+            Long id
+    ) {
+
+        Deferral deferral =
+                deferralService.findById(id);
+
+        if (deferral != null) {
+
+            deferralService.approve(
+                    id,
+                    deferral.getStudent().getFullName()
+            );
         }
+
+        return new RedirectResponse(
+                "/Mentari/app/deferrals/admin"
+        );
+    }
+
+    /*
+     * =========================
+     * REJECT
+     * =========================
+     */
+    @ActionGetMethod("reject/{id}")
+    @ProtectedRoute(roles = {"ADMIN"})
+    public RedirectResponse reject(
+            @ActionPathParam("id")
+            Long id
+    ) {
+
+        Deferral deferral =
+                deferralService.findById(id);
+
+        if (deferral != null) {
+
+            deferralService.reject(
+                    id,
+                    deferral.getStudent().getFullName()
+            );
+        }
+
+        return new RedirectResponse(
+                "/Mentari/app/deferrals/admin"
+        );
     }
 }

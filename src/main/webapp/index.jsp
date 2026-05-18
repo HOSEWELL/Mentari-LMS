@@ -192,7 +192,9 @@
             <i class="fas fa-graduation-cap"></i> Mentari LMS
         </a>
         <div class="nav-links">
-            <a href="${pageContext.request.contextPath}/login" class="btn-portal">Login Portal</a>
+            <a href="${pageContext.request.contextPath}/app/auth/login" class="btn-portal">
+                Login Portal
+            </a>
         </div>
     </nav>
 

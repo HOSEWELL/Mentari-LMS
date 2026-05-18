@@ -1,4 +1,4 @@
-package app.framework;
+package app.framework.binding;
 
 import jakarta.servlet.http.HttpServlet;
 import java.lang.reflect.Field;

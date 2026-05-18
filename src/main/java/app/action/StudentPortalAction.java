@@ -1,26 +1,38 @@
 package app.action;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
+import app.framework.annotation.Action;
+import app.framework.annotation.ActionGetMethod;
+import app.framework.annotation.ProtectedRoute;
 
-@WebServlet("/student/portal")
-public class StudentPortalAction extends HttpServlet {
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        HttpSession session = req.getSession(false);
+import app.framework.response.ActionResponse;
 
-        // Security Check: If no session or user is not a STUDENT, redirect to login
-        if (session == null || session.getAttribute("loggedInUser") == null) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return;
-        }
+@ProtectedRoute(
+        roles = {"STUDENT"}
+)
 
-        // The user is logged in, show the portal
-        req.getRequestDispatcher("/WEB-INF/views/student/portal.jsp").forward(req, resp);
+@Action(
+        value = "student-portal",
+        label = "Student Portal",
+        roles = {"STUDENT"},
+        showLink = true
+)
+public class StudentPortalAction {
+
+    @ActionGetMethod("index")
+    public ActionResponse index() {
+
+        return new ActionResponse("""
+<div class='card'>
+
+<h1 class='page-title'>
+Student Portal
+</h1>
+
+<p>
+Welcome to Mentari LMS Student Portal
+</p>
+
+</div>
+""");
     }
 }

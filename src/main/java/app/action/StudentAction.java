@@ -1,44 +1,64 @@
 package app.action;
 
 import app.bean.StudentService;
-import app.framework.BaseAction;
-import app.model.Student;
-import jakarta.ejb.EJB;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.List;
 
-@WebServlet("/admin/students")
-public class StudentAction extends BaseAction<Student> {
+import app.framework.annotation.Action;
+import app.framework.annotation.ActionGetMethod;
+import app.framework.annotation.ActionPostMethod;
+import app.framework.annotation.ActionRequestBody;
+import app.framework.annotation.ProtectedRoute;
+
+import app.framework.response.ActionResponse;
+
+import app.model.Student;
+
+import jakarta.ejb.EJB;
+import jakarta.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+
+@Action(
+        value = "students",
+        label = "Students",
+        roles = {"ADMIN"},
+        showLink = true
+)
+
+@ProtectedRoute(
+        roles = {"ADMIN"}
+)
+public class StudentAction {
 
     @EJB
     private StudentService studentService;
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    /*
+     * LIST STUDENTS
+     */
+    @ActionGetMethod("list")
+    public ActionResponse list() {
 
-        List<Student> students = studentService.findAll();
-        req.setAttribute("students", students);
-        req.getRequestDispatcher("/WEB-INF/views/admin/students.jsp")
-                .forward(req, resp);
+        return new ActionResponse(
+                Student.class,
+                studentService.findAll()
+        );
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    /*
+     * SAVE STUDENT
+     */
+    @ActionPostMethod("save")
+    public ActionResponse save(
 
-        Student student = super.serializeForm(req.getParameterMap());
+            @ActionRequestBody
+            Student student
+    ) {
 
-        if (studentService.enrollStudent(student)) {
-            resp.sendRedirect(req.getContextPath()
-                    + "/admin/students?success=true");
-        } else {
-            resp.sendRedirect(req.getContextPath()
-                    + "/admin/students?error=blocked_name");
-        }
+        studentService.enrollStudent(student);
+
+        return new ActionResponse(
+                Student.class,
+                studentService.findAll()
+        );
     }
 }

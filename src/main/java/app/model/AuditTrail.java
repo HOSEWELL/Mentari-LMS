@@ -1,31 +1,55 @@
 package app.model;
 
-import app.framework.MentariColumn;
-import app.framework.MentariTable;
+import app.framework.annotation.MentariTableColumn;
+import app.framework.annotation.MentariTableView;
 
-@MentariTable(name = "audit_trail")
-public class AuditTrail {
+import jakarta.persistence.*;
 
-    @MentariColumn(name = "id", primaryKey = true)
-    private Long id;
+import java.util.Date;
 
-    @MentariColumn(name = "activity")
+@Entity
+@Table(name = "audit_trail")
+
+@MentariTableView(
+        title = "Audit Trail"
+)
+public class AuditTrail extends BaseEntity {
+
+    @MentariTableColumn(
+            label = "Activity"
+    )
+    @Column(columnDefinition = "TEXT")
     private String activity;
 
-    @MentariColumn(name = "created_at")
-    private String createdAt;
+    @MentariTableColumn(
+            label = "Created At"
+    )
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "created_at")
+    private Date createdAt;
 
-    public AuditTrail() {}
+    public AuditTrail() {
+        this.createdAt = new Date();
+    }
 
     public AuditTrail(String activity) {
         this.activity = activity;
-        this.createdAt = new java.util.Date().toString();
+        this.createdAt = new Date();
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getActivity() { return activity; }
-    public void setActivity(String activity) { this.activity = activity; }
-    public String getCreatedAt() { return createdAt; }
-    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+    public String getActivity() {
+        return activity;
+    }
+
+    public void setActivity(String activity) {
+        this.activity = activity;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
 }
