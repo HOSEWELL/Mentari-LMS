@@ -1,5 +1,6 @@
 package app.bean;
 
+import app.dao.AuditTrailDao;
 import app.dao.CourseDao;
 import app.model.Course;
 import app.utility.validation.Validate;
@@ -13,6 +14,9 @@ public class CourseService {
 
     @Inject
     private CourseDao courseDao;
+
+    @Inject
+    private AuditTrailDao auditTrailDao;
 
     @Inject
     @Named("Course")

@@ -1,8 +1,11 @@
 package app.bean;
 
+import app.dao.AuditTrailDao;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Schedule;
 import jakarta.ejb.Singleton;
+import jakarta.inject.Inject;
+
 import java.util.Date;
 
 @Singleton
@@ -10,6 +13,9 @@ public class EmailReminderBean {
 
     @EJB
     private NotificationBean notificationBean;
+
+    @Inject
+    private AuditTrailDao auditTrailDao;
 
     @Schedule(second = "0", minute = "0", hour = "8", persistent = false)
     public void dailySystemCheck() {

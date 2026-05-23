@@ -1,5 +1,6 @@
 package app.bean;
 
+import app.dao.AuditTrailDao;
 import app.dao.StudentDao;
 import app.dao.UserDao;
 import app.model.Student;
@@ -23,6 +24,9 @@ public class StudentService {
 
     @Inject
     private UserDao userDao;
+
+    @Inject
+    private AuditTrailDao auditTrailDao;
 
     @Inject
     @Named("Student")
