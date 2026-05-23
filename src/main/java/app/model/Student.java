@@ -7,6 +7,7 @@ import app.framework.annotation.MentariTableView;
 
 import jakarta.persistence.*;
 
+
 @Entity
 @Table(name = "students")
 
