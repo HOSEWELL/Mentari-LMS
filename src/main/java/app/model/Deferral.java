@@ -12,12 +12,13 @@ import java.util.Date;
 
 @MentariTableView(
         title = "Deferrals",
-        addAction = "/app/deferrals/student"
+        addAction = "/Mentari/app/deferrals/student"
 )
 
 @MentariForm(
-        actionUrl = "/app/deferrals/submit",
-        label = "Submit Deferral"
+        actionUrl = "/Mentari/app/deferrals/submit",
+        label = "Submit Deferral",
+        method = "POST"
 )
 public class Deferral extends BaseEntity {
 
@@ -104,7 +105,6 @@ public class Deferral extends BaseEntity {
     public Deferral() {
 
         this.status = "PENDING";
-
         this.submittedAt = new Date();
     }
 

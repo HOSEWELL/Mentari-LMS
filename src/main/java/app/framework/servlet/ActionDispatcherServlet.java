@@ -4,454 +4,191 @@ import app.framework.annotation.Action;
 import app.framework.annotation.ActionGetMethod;
 import app.framework.annotation.ActionPostMethod;
 import app.framework.annotation.PublicRoute;
-
 import app.framework.rendering.AppPage;
-
 import app.framework.response.ActionResponse;
 import app.framework.response.RedirectResponse;
-
 import jakarta.enterprise.inject.spi.CDI;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
 import java.io.IOException;
-
 import java.lang.reflect.Method;
 
 @WebServlet("/app/*")
 public class ActionDispatcherServlet extends HttpServlet {
 
-    private final AppPage appPage =
-            new AppPage();
+    private final AppPage appPage = new AppPage();
 
     @Override
-    protected void service(
-            HttpServletRequest req,
-            HttpServletResponse resp
-    ) throws ServletException, IOException {
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        String path =
-                req.getPathInfo();
+        String path = req.getPathInfo();
 
-        if (
-                path == null
-                        ||
-                        path.equals("/")
-        ) {
-
-            resp.sendRedirect(
-                    req.getContextPath() + "/"
-            );
-
+        if (path == null || path.equals("/")) {
+            resp.sendRedirect(req.getContextPath() + "/");
             return;
         }
 
-        String[] parts =
-                path.substring(1).split("/");
+        String[] parts = path.substring(1).split("/");
 
         if (parts.length < 2) {
-
-            resp.getWriter()
-                    .write("Invalid route");
-
+            resp.getWriter().write("Invalid route");
             return;
         }
 
-        String controllerName =
-                parts[0];
-
-        String methodName =
-                parts[1];
+        String controllerName = parts[0];
+        String methodName = parts[1];
 
         try {
-
-            Class<?> controllerClass =
-                    findController(controllerName);
+            Class<?> controllerClass = findController(controllerName);
 
             if (controllerClass == null) {
-
-                resp.getWriter()
-                        .write("Controller not found");
-
+                resp.getWriter().write("Controller not found");
                 return;
             }
 
-            /*
-             * SECURITY
-             */
-            boolean isPublic =
-                    controllerClass.isAnnotationPresent(
-                            PublicRoute.class
-                    );
-
-            if (!isPublic) {
-
-                HttpSession session =
-                        req.getSession(false);
-
-                if (
-                        session == null
-                                ||
-                                session.getAttribute(
-                                        "loggedInUser"
-                                ) == null
-                ) {
-
-                    resp.sendRedirect(
-                            req.getContextPath()
-                                    + "/app/auth/login"
-                    );
-
+            if (!controllerClass.isAnnotationPresent(PublicRoute.class)) {
+                HttpSession session = req.getSession(false);
+                if (session == null || session.getAttribute("loggedInUser") == null) {
+                    resp.sendRedirect(req.getContextPath() + "/app/auth/login");
                     return;
                 }
             }
 
-            /*
-             * CONTROLLER INSTANCE
-             */
-            Object controller =
-                    CDI.current()
-                            .select(controllerClass)
-                            .get();
-
-            /*
-             * TARGET METHOD
-             */
-            Method targetMethod =
-                    findTargetMethod(
-                            controllerClass,
-                            req.getMethod(),
-                            methodName
-                    );
+            Object controller = CDI.current().select(controllerClass).get();
+            Method targetMethod = findTargetMethod(controllerClass, req.getMethod(), methodName);
 
             if (targetMethod == null) {
-
-                resp.getWriter()
-                        .write("Method not found");
-
+                resp.getWriter().write("Method not found");
                 return;
             }
 
-            /*
-             * EXECUTE ACTION
-             */
+            int parameterCount = targetMethod.getParameterCount();
             Object result;
 
-            if (targetMethod.getParameterCount() == 0) {
+            if (parameterCount == 0) {
+                result = targetMethod.invoke(controller);
+            } else if (parameterCount == 1) {
+                Class<?> parameterType = targetMethod.getParameterTypes()[0];
+                if (parameterType.equals(HttpServletRequest.class)) {
+                    result = targetMethod.invoke(controller, req);
+                } else if (parameterType.equals(HttpSession.class)) {
+                    result = targetMethod.invoke(controller, req.getSession());
+                } else {
+                    Object model = parameterType.getDeclaredConstructor().newInstance();
+                    bindRequestData(model, req);
+                    result = targetMethod.invoke(controller, model);
+                }
+            } else if (parameterCount == 2) {
+                Object[] args = new Object[2];
+                Class<?> firstParam = targetMethod.getParameterTypes()[0];
+                Class<?> secondParam = targetMethod.getParameterTypes()[1];
 
-                result =
-                        targetMethod.invoke(
-                                controller
-                        );
+                if (firstParam.equals(HttpServletRequest.class)) { args[0] = req; }
+                else if (firstParam.equals(HttpSession.class)) { args[0] = req.getSession(); }
+                else { Object model = firstParam.getDeclaredConstructor().newInstance(); bindRequestData(model, req); args[0] = model; }
 
+                if (secondParam.equals(HttpServletRequest.class)) { args[1] = req; }
+                else if (secondParam.equals(HttpSession.class)) { args[1] = req.getSession(); }
+                else { Object model = secondParam.getDeclaredConstructor().newInstance(); bindRequestData(model, req); args[1] = model; }
+
+                result = targetMethod.invoke(controller, args);
             } else {
-
-                Class<?> parameterType =
-                        targetMethod
-                                .getParameterTypes()[0];
-
-                /*
-                 * HTTP REQUEST
-                 */
-                if (
-                        parameterType.equals(
-                                HttpServletRequest.class
-                        )
-                ) {
-
-                    result =
-                            targetMethod.invoke(
-                                    controller,
-                                    req
-                            );
-                }
-
-                /*
-                 * HTTP SESSION
-                 */
-                else if (
-                        parameterType.equals(
-                                HttpSession.class
-                        )
-                ) {
-
-                    result =
-                            targetMethod.invoke(
-                                    controller,
-                                    req.getSession()
-                            );
-                }
-
-                /*
-                 * UNKNOWN PARAMETER
-                 */
-                else {
-
-                    throw new RuntimeException(
-                            "Unsupported parameter type: "
-                                    + parameterType.getName()
-                    );
-                }
+                throw new RuntimeException("Unsupported parameter count: " + parameterCount);
             }
 
-            /*
-             * RESPONSE TYPE
-             */
-            if (!(result instanceof ActionResponse response)) {
-
-                resp.getWriter()
-                        .write("Invalid response");
-
+            if (result instanceof RedirectResponse redirectResponse) {
+                resp.sendRedirect(redirectResponse.getUrl());
                 return;
             }
 
-            /*
-             * REDIRECT
-             */
-            if (
-                    response.getRedirectResponse()
-                            != null
-            ) {
-
-                RedirectResponse redirect =
-                        response.getRedirectResponse();
-
-                resp.sendRedirect(
-                        redirect.getUrl()
-                );
-
+            if (!(result instanceof ActionResponse)) {
+                resp.getWriter().write("Invalid response");
                 return;
             }
 
-            /*
-             * PAGE CONTENT
-             */
+            ActionResponse response = (ActionResponse) result;
+
+            if (response.getRedirectResponse() != null) {
+                resp.sendRedirect(response.getRedirectResponse().getUrl());
+                return;
+            }
+
             String content = "";
 
-            /*
-             * TABLE RESPONSE
-             */
-            if (
-                    response.getResponseClazz() != null
-                            &&
-                            response.getResponseDataList() != null
-            ) {
-
-                content =
-                        appPage
-                                .getFramework()
-                                .table(
-                                        response.getResponseClazz(),
-                                        response.getResponseDataList()
-                                );
+            if (response.getResponseClazz() != null && response.getResponseDataList() != null) {
+                String role = (String) req.getSession().getAttribute("role");
+                content = appPage.getFramework().table(response.getResponseClazz(), response.getResponseDataList(), role);
+            } else if (response.getResponseText() != null) {
+                content = response.getResponseText();
+            } else if (response.getDashboardResponse() != null) {
+                content = response.getDashboardResponse().render();
             }
 
-            /*
-             * TEXT RESPONSE
-             */
-            else if (
-                    response.getResponseText()
-                            != null
-            ) {
-
-                content =
-                        response.getResponseText();
-            }
-
-            /*
-             * DASHBOARD RESPONSE
-             */
-            else if (
-                    response.getDashboardResponse()
-                            != null
-            ) {
-
-                content =
-                        response
-                                .getDashboardResponse()
-                                .render();
-            }
-
-            /*
-             * AUTH PAGE
-             */
-            boolean authPage =
-                    controllerName.equals("auth");
-
-            if (authPage) {
-
-                resp.setContentType(
-                        "text/html"
-                );
-
-                resp.getWriter()
-                        .write(content);
-
+            if (controllerName.equals("auth")) {
+                resp.setContentType("text/html");
+                resp.getWriter().write(content);
                 return;
             }
 
-            /*
-             * NORMAL APP PAGE
-             */
-            appPage.display(
-                    req,
-                    resp,
-                    content
-            );
+            appPage.display(req, resp, content);
 
         } catch (Exception e) {
-
             throw new ServletException(e);
         }
     }
 
-    /*
-     * FIND CONTROLLER
-     */
-    private Class<?> findController(
-            String controllerName
-    ) {
+    private void bindRequestData(Object model, HttpServletRequest req) {
+        req.getParameterMap().forEach((key, value) -> {
+            try {
+                var field = model.getClass().getDeclaredField(key);
+                field.setAccessible(true);
+                Class<?> fieldType = field.getType();
+                if (fieldType.equals(String.class)) { field.set(model, value[0]); }
+                else if (fieldType.equals(Long.class) || fieldType.equals(long.class)) { field.set(model, Long.parseLong(value[0])); }
+                else if (fieldType.equals(Integer.class) || fieldType.equals(int.class)) { field.set(model, Integer.parseInt(value[0])); }
+                else if (fieldType.getName().equals("java.time.LocalDate")) { field.set(model, java.time.LocalDate.parse(value[0])); }
+            } catch (Exception ignored) {}
+        });
+    }
 
-        String packageName =
-                "app.action";
-
+    private Class<?> findController(String controllerName) {
+        String packageName = "app.action";
         try {
-
             Class<?>[] classes = {
-
-                    Class.forName(
-                            packageName + ".AuthAction"
-                    ),
-
-                    Class.forName(
-                            packageName + ".DashboardAction"
-                    ),
-
-                    Class.forName(
-                            packageName + ".StudentAction"
-                    ),
-
-                    Class.forName(
-                            packageName + ".CourseAction"
-                    ),
-
-                    Class.forName(
-                            packageName + ".DeferralAction"
-                    ),
-
-                    Class.forName(
-                            packageName + ".AuditTrailAction"
-                    ),
-
-                    Class.forName(
-                            packageName + ".StudentPortalAction"
-                    ),
-
-                    Class.forName(
-                            packageName + ".HomeAction"
-                    )
+                    Class.forName(packageName + ".AuthAction"),
+                    Class.forName(packageName + ".DashboardAction"),
+                    Class.forName(packageName + ".StudentAction"),
+                    Class.forName(packageName + ".CourseAction"),
+                    Class.forName(packageName + ".DeferralAction"),
+                    Class.forName(packageName + ".AuditTrailAction"),
+                    Class.forName(packageName + ".StudentPortalAction"),
+                    Class.forName(packageName + ".AccountAction"),
+                    Class.forName(packageName + ".HomeAction")
             };
-
             for (Class<?> clazz : classes) {
-
-                if (
-                        clazz.isAnnotationPresent(
-                                Action.class
-                        )
-                ) {
-
-                    Action action =
-                            clazz.getAnnotation(
-                                    Action.class
-                            );
-
-                    if (
-                            action.value()
-                                    .equals(controllerName)
-                    ) {
-
-                        return clazz;
-                    }
-                }
+                if (!clazz.isAnnotationPresent(Action.class)) continue;
+                Action action = clazz.getAnnotation(Action.class);
+                if (action.value().equals(controllerName)) return clazz;
             }
-
-        } catch (Exception ignored) {
-        }
-
+        } catch (Exception ignored) {}
         return null;
     }
 
-    /*
-     * FIND TARGET METHOD
-     */
-    private Method findTargetMethod(
-            Class<?> controllerClass,
-            String httpMethod,
-            String methodName
-    ) {
-
-        for (
-                Method method :
-                controllerClass.getDeclaredMethods()
-        ) {
-
-            /*
-             * GET
-             */
-            if (
-                    httpMethod.equalsIgnoreCase("GET")
-                            &&
-                            method.isAnnotationPresent(
-                                    ActionGetMethod.class
-                            )
-            ) {
-
-                ActionGetMethod annotation =
-                        method.getAnnotation(
-                                ActionGetMethod.class
-                        );
-
-                if (
-                        annotation.value()
-                                .equals(methodName)
-                ) {
-
-                    return method;
-                }
+    private Method findTargetMethod(Class<?> controllerClass, String httpMethod, String methodName) {
+        for (Method method : controllerClass.getDeclaredMethods()) {
+            if (httpMethod.equalsIgnoreCase("GET") && method.isAnnotationPresent(ActionGetMethod.class)) {
+                String route = method.getAnnotation(ActionGetMethod.class).value();
+                if (route.equals(methodName) || route.startsWith(methodName + "/{")) return method;
             }
-
-            /*
-             * POST
-             */
-            if (
-                    httpMethod.equalsIgnoreCase("POST")
-                            &&
-                            method.isAnnotationPresent(
-                                    ActionPostMethod.class
-                            )
-            ) {
-
-                ActionPostMethod annotation =
-                        method.getAnnotation(
-                                ActionPostMethod.class
-                        );
-
-                if (
-                        annotation.value()
-                                .equals(methodName)
-                ) {
-
-                    return method;
-                }
+            if (httpMethod.equalsIgnoreCase("POST") && method.isAnnotationPresent(ActionPostMethod.class)) {
+                String route = method.getAnnotation(ActionPostMethod.class).value();
+                if (route.equals(methodName) || route.startsWith(methodName + "/{")) return method;
             }
         }
-
         return null;
     }
 }

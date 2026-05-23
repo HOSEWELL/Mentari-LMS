@@ -12,6 +12,7 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
+import java.security.SecureRandom;
 import java.util.List;
 
 @Stateless
@@ -33,6 +34,9 @@ public class StudentService {
     @EJB
     private AuditTrailBean auditTrailBean;
 
+    private static final String CHARACTERS =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#";
+
     public boolean enrollStudent(Student student) {
 
         if (
@@ -46,6 +50,12 @@ public class StudentService {
         }
 
         /*
+         * GENERATE RANDOM PASSWORD
+         */
+        String generatedPassword =
+                generateRandomPassword(10);
+
+        /*
          * CREATE LOGIN ACCOUNT
          */
         User studentUser = new User();
@@ -55,7 +65,7 @@ public class StudentService {
         );
 
         studentUser.setPassword(
-                "@Mentari2026"
+                generatedPassword
         );
 
         studentUser.setRole(
@@ -94,6 +104,33 @@ public class StudentService {
         );
 
         return true;
+    }
+
+    /*
+     * GENERATE PASSWORD
+     */
+    private String generateRandomPassword(
+            int length
+    ) {
+
+        SecureRandom random =
+                new SecureRandom();
+
+        StringBuilder password =
+                new StringBuilder();
+
+        for (int i = 0; i < length; i++) {
+
+            int index = random.nextInt(
+                    CHARACTERS.length()
+            );
+
+            password.append(
+                    CHARACTERS.charAt(index)
+            );
+        }
+
+        return password.toString();
     }
 
     /*

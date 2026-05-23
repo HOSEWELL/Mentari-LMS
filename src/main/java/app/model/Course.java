@@ -12,11 +12,11 @@ import jakarta.persistence.*;
 
 @MentariTableView(
         title = "Courses",
-        addAction = "/app/courses/save"
+        addAction = "/Mentari/app/courses/save"
 )
 
 @MentariForm(
-        actionUrl = "/app/courses/save",
+        actionUrl = "/Mentari/app/courses/save",
         label = "Add Course"
 )
 public class Course extends BaseEntity {

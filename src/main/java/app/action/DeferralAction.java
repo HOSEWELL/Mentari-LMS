@@ -68,7 +68,6 @@ public class DeferralAction {
     @ActionPostMethod("submit")
     @ProtectedRoute(roles = {"STUDENT"})
     public RedirectResponse submit(
-            @ActionRequestBody
             Deferral deferral,
 
             HttpSession session

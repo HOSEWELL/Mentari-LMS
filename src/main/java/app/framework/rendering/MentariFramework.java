@@ -4,643 +4,166 @@ import app.framework.annotation.*;
 import app.framework.response.DashboardCard;
 import app.framework.response.DashboardResponse;
 import app.model.Deferral;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.spi.CDI;
-
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.List;
 
 @ApplicationScoped
 public class MentariFramework {
 
-    /*
-     * =========================================
-     * DASHBOARD
-     * =========================================
-     */
-    public String dashboard(
-            DashboardResponse response
-    ) {
-
+    public String dashboard(DashboardResponse response) {
         StringBuilder html = new StringBuilder();
-
-        html.append("""
-<div class='container'>
-
-<h1 class='page-title'>
-""");
-
-        html.append(response.getTitle());
-
-        html.append("""
-</h1>
-
-<div class='dashboard-grid'>
-""");
+        html.append("<div class='container'>").append("<h1 class='page-title'>").append(response.getTitle()).append("</h1>").append("<div class='dashboard-grid'>");
 
         for (DashboardCard card : response.getCards()) {
-
-            html.append("""
-<div class='dashboard-card'>
-
-<div class='dashboard-card-top'>
-
-<div>
-
-<div class='dashboard-title'>
-""");
-
-            html.append(card.getTitle());
-
-            html.append("""
-</div>
-
-<div class='dashboard-value'>
-""");
-
-            html.append(card.getValue());
-
-            html.append("""
-</div>
-
-</div>
-
-<div class='dashboard-icon'
-style='background:
-""");
-
-            html.append(card.getColor());
-
-            html.append("""
-'>
-
-<i class='
-""");
-
-            html.append(card.getIcon());
-
-            html.append("""
-'></i>
-
-</div>
-
-</div>
-
-</div>
-""");
+            html.append("<div class='dashboard-card'>").append("<div class='dashboard-card-top'>").append("<div>")
+                    .append("<div class='dashboard-title'>").append(card.getTitle()).append("</div>")
+                    .append("<div class='dashboard-value'>").append(card.getValue()).append("</div>")
+                    .append("</div>")
+                    .append("<div class='dashboard-icon' style='background:").append(card.getColor()).append("'>")
+                    .append("<i class='").append(card.getIcon()).append("'></i>")
+                    .append("</div>").append("</div>").append("</div>");
         }
 
-        html.append("""
-</div>
-
-</div>
-""");
-
+        html.append("</div></div>");
         return html.toString();
     }
 
-    /*
-     * =========================================
-     * TABLE GENERATOR
-     * =========================================
-     */
-    public String table(
-            Class<?> clazz,
-            List<?> data
-    ) {
+    public String table(Class<?> clazz, List<?> data, String role) {
+        StringBuilder html = new StringBuilder();
+        MentariTableView tableView = clazz.getAnnotation(MentariTableView.class);
+        boolean showAddButton = !(clazz.equals(Deferral.class) && !"STUDENT".equals(role));
 
-        StringBuilder html =
-                new StringBuilder();
+        html.append("<div class='container'>").append("<div class='table-container'>");
+        html.append("<div class='table-header'>").append("<h2 class='page-title'>").append(tableView.title()).append("</h2>");
 
-        MentariTableView tableView =
-                clazz.getAnnotation(
-                        MentariTableView.class
-                );
-
-        html.append("""
-<div class='container'>
-
-<div class='table-container'>
-""");
-
-        /*
-         * HEADER
-         */
-        html.append("""
-<div class='table-header'>
-""");
-
-        html.append("""
-<h2 class='page-title'>
-""");
-
-        html.append(tableView.title());
-
-        html.append("""
-</h2>
-""");
-
-        /*
-         * FLOAT BUTTON
-         */
-        if (!tableView.addAction().isBlank()) {
-
-            html.append("""
-<a class='floating-btn'
-href='javascript:void(0)'
-onclick='toggleMentariForm()'>
-
-<i class='fas fa-plus'></i>
-
-</a>
-""");
+        if (!tableView.addAction().isBlank() && showAddButton) {
+            html.append("<a class='floating-btn' href='javascript:void(0)' onclick='toggleMentariForm()'><i class='fas fa-plus'></i></a>");
         }
 
-        html.append("""
-</div>
-""");
+        html.append("</div>");
 
-        /*
-         * FORM
-         */
-        html.append("""
-<div id='mentari-form'
-style='display:none; margin-bottom:25px;'>
-""");
+        if (showAddButton) {
+            html.append("<div id='mentari-form' style='display:none; margin-bottom:25px;'>").append(form(clazz)).append("</div>");
+        }
 
-        html.append(form(clazz));
+        html.append("<table>").append("<thead>").append("<tr>");
 
-        html.append("""
-</div>
-""");
-
-        /*
-         * TABLE
-         */
-        html.append("""
-<table>
-
-<thead>
-
-<tr>
-""");
-
-        for (Field field :
-                clazz.getDeclaredFields()) {
-
-            if (
-                    field.isAnnotationPresent(
-                            MentariTableColumn.class
-                    )
-            ) {
-
-                MentariTableColumn column =
-                        field.getAnnotation(
-                                MentariTableColumn.class
-                        );
-
-                if (!column.hidden()) {
-
-                    html.append("""
-<th>
-""");
-
-                    html.append(column.label());
-
-                    html.append("""
-</th>
-""");
-                }
+        for (Field field : clazz.getDeclaredFields()) {
+            if (field.isAnnotationPresent(MentariTableColumn.class)) {
+                MentariTableColumn column = field.getAnnotation(MentariTableColumn.class);
+                if (!column.hidden()) html.append("<th>").append(column.label()).append("</th>");
             }
         }
 
-        /*
-         * DEFERRAL ACTIONS
-         */
-        if (clazz.equals(Deferral.class)) {
+        if (clazz.equals(Deferral.class) && "ADMIN".equals(role)) html.append("<th>Actions</th>");
 
-            html.append("""
-<th>Actions</th>
-""");
-        }
+        html.append("</tr>").append("</thead>").append("<tbody>");
 
-        html.append("""
-</tr>
-
-</thead>
-
-<tbody>
-""");
-
-        /*
-         * ROWS
-         */
         for (Object row : data) {
+            html.append("<tr>");
 
-            html.append("""
-<tr>
-""");
-
-            for (Field field :
-                    clazz.getDeclaredFields()) {
-
-                if (
-                        field.isAnnotationPresent(
-                                MentariTableColumn.class
-                        )
-                ) {
-
-                    MentariTableColumn column =
-                            field.getAnnotation(
-                                    MentariTableColumn.class
-                            );
-
-                    if (column.hidden()) {
-                        continue;
-                    }
-
-                    field.setAccessible(true);
-
-                    try {
-
-                        Object value =
-                                field.get(row);
-
-                        /*
-                         * RELATIONSHIP LABEL
-                         */
-                        if (
-                                field.isAnnotationPresent(
-                                        MentariRelationshipLabel.class
-                                )
-                        ) {
-
-                            if (value != null) {
-
-                                String labelFieldName =
-                                        field.getAnnotation(
-                                                MentariRelationshipLabel.class
-                                        ).value();
-
-                                Field labelField =
-                                        value.getClass()
-                                                .getDeclaredField(
-                                                        labelFieldName
-                                                );
-
-                                labelField.setAccessible(true);
-
-                                value =
-                                        labelField.get(value);
-                            }
-                        }
-
-                        html.append("""
-<td>
-""");
-
-                        html.append(
-                                value != null
-                                        ? value
-                                        : "-"
-                        );
-
-                        html.append("""
-</td>
-""");
-
-                    } catch (Exception e) {
-
-                        html.append("""
-<td>Error</td>
-""");
-                    }
-                }
-            }
-
-            /*
-             * DEFERRAL ACTIONS
-             */
-            if (clazz.equals(Deferral.class)) {
+            for (Field field : clazz.getDeclaredFields()) {
+                if (!field.isAnnotationPresent(MentariTableColumn.class)) continue;
+                MentariTableColumn column = field.getAnnotation(MentariTableColumn.class);
+                if (column.hidden()) continue;
+                field.setAccessible(true);
 
                 try {
+                    Object value = field.get(row);
 
-                    Method method =
-                            row.getClass()
-                                    .getMethod("getId");
+                    if (field.isAnnotationPresent(MentariRelationshipLabel.class) && value != null) {
+                        String labelFieldName = field.getAnnotation(MentariRelationshipLabel.class).value();
+                        Field labelField = value.getClass().getDeclaredField(labelFieldName);
+                        labelField.setAccessible(true);
+                        value = labelField.get(value);
+                    }
 
-                    Long id =
-                            (Long) method.invoke(row);
-
-                    html.append("""
-<td>
-
-<div style='display:flex; gap:10px;'>
-
-<a class='approve-btn'
-href='/Mentari/app/deferrals/approve/
-""");
-
-                    html.append(id);
-
-                    html.append("""
-'>
-
-Approve
-
-</a>
-
-<a class='reject-btn'
-href='/Mentari/app/deferrals/reject/
-""");
-
-                    html.append(id);
-
-                    html.append("""
-'>
-
-Reject
-
-</a>
-
-</div>
-
-</td>
-""");
-
+                    html.append("<td>").append(value != null ? value : "-").append("</td>");
                 } catch (Exception e) {
-
-                    html.append("""
-<td>-</td>
-""");
+                    html.append("<td>Error</td>");
                 }
             }
 
-            html.append("""
-</tr>
-""");
+            if (clazz.equals(Deferral.class) && "ADMIN".equals(role)) {
+                try {
+                    Long id = (Long) row.getClass().getMethod("getId").invoke(row);
+                    String status = (String) row.getClass().getMethod("getStatus").invoke(row);
+
+                    html.append("<td>");
+                    if ("PENDING".equalsIgnoreCase(status)) {
+                        html.append("<div style='display:flex; gap:10px;'>")
+                                .append("<a class='approve-btn' href='/Mentari/app/deferrals/approve/").append(id).append("'>Approve</a>")
+                                .append("<a class='reject-btn' href='/Mentari/app/deferrals/reject/").append(id).append("'>Reject</a>")
+                                .append("</div>");
+                    } else {
+                        html.append("-");
+                    }
+                    html.append("</td>");
+                } catch (Exception e) {
+                    html.append("<td>-</td>");
+                }
+            }
+
+            html.append("</tr>");
         }
 
-        html.append("""
-</tbody>
-
-</table>
-
-</div>
-
-<script>
-
-function toggleMentariForm(){
-
-    let form =
-        document.getElementById(
-            'mentari-form'
-        );
-
-    if(form.style.display === 'none'){
-
-        form.style.display = 'block';
-
-    }else{
-
-        form.style.display = 'none';
-    }
-}
-
-</script>
-
-</div>
-""");
+        html.append("</tbody>").append("</table>").append("</div>");
+        html.append("<script>function toggleMentariForm(){let form=document.getElementById('mentari-form');form.style.display=form.style.display==='none'?'block':'none';}</script>");
+        html.append("</div>");
 
         return html.toString();
     }
 
-    /*
-     * =========================================
-     * FORM GENERATOR
-     * =========================================
-     */
-    public String form(
-            Class<?> clazz
-    ) {
+    public String form(Class<?> clazz) {
+        if (!clazz.isAnnotationPresent(MentariForm.class)) return "";
 
-        if (
-                !clazz.isAnnotationPresent(
-                        MentariForm.class
-                )
-        ) {
+        MentariForm form = clazz.getAnnotation(MentariForm.class);
+        StringBuilder html = new StringBuilder();
 
-            return "";
-        }
+        html.append("<form method='").append(form.method()).append("' action='").append(form.actionUrl()).append("'>");
 
-        MentariForm form =
-                clazz.getAnnotation(
-                        MentariForm.class
-                );
+        for (Field field : clazz.getDeclaredFields()) {
+            if (!field.isAnnotationPresent(MentariFormField.class)) continue;
+            MentariFormField formField = field.getAnnotation(MentariFormField.class);
+            if (formField.hidden()) continue;
 
-        StringBuilder html =
-                new StringBuilder();
+            html.append("<div class='form-group'>").append("<label>").append(formField.label()).append("</label>");
 
-        html.append("""
-<form method='
-""");
+            if (field.isAnnotationPresent(MentariSelect.class)) {
+                MentariSelect select = field.getAnnotation(MentariSelect.class);
+                try {
+                    Class<?> daoClass = Class.forName("app.dao." + select.entity().getSimpleName() + "Dao");
+                    Object dao = CDI.current().select(daoClass).get();
+                    List<?> items = (List<?>) daoClass.getMethod("findAll").invoke(dao);
 
-        html.append(form.method());
+                    html.append("<select name='").append(field.getName()).append(".id'>");
 
-        html.append("""
-' action='
-""");
-
-        html.append(form.actionUrl());
-
-        html.append("""
-'>
-""");
-
-        for (Field field :
-                clazz.getDeclaredFields()) {
-
-            if (
-                    field.isAnnotationPresent(
-                            MentariFormField.class
-                    )
-            ) {
-
-                MentariFormField formField =
-                        field.getAnnotation(
-                                MentariFormField.class
-                        );
-
-                if (formField.hidden()) {
-                    continue;
-                }
-
-                html.append("""
-<div class='form-group'>
-""");
-
-                html.append("""
-<label>
-""");
-
-                html.append(formField.label());
-
-                html.append("""
-</label>
-""");
-
-                /*
-                 * SELECT
-                 */
-                if (
-                        field.isAnnotationPresent(
-                                MentariSelect.class
-                        )
-                ) {
-
-                    MentariSelect select =
-                            field.getAnnotation(
-                                    MentariSelect.class
-                            );
-
-                    try {
-
-                        Class<?> daoClass =
-                                Class.forName(
-                                        "app.dao."
-                                                + select.entity()
-                                                .getSimpleName()
-                                                + "Dao"
-                                );
-
-                        Object dao =
-                                CDI.current()
-                                        .select(daoClass)
-                                        .get();
-
-                        Method method =
-                                daoClass.getMethod(
-                                        "findAll"
-                                );
-
-                        List<?> items =
-                                (List<?>)
-                                        method.invoke(dao);
-
-                        html.append("""
-<select name='
-""");
-
-                        html.append(field.getName());
-
-                        html.append("""
-.id'>
-""");
-
-                        for (Object item : items) {
-
-                            Field idField =
-                                    item.getClass()
-                                            .getSuperclass()
-                                            .getDeclaredField("id");
-
-                            idField.setAccessible(true);
-
-                            Object id =
-                                    idField.get(item);
-
-                            Field labelField =
-                                    item.getClass()
-                                            .getDeclaredField(
-                                                    select.labelField()
-                                            );
-
-                            labelField.setAccessible(true);
-
-                            Object label =
-                                    labelField.get(item);
-
-                            html.append("""
-<option value='
-""");
-
-                            html.append(id);
-
-                            html.append("""
-'>
-""");
-
-                            html.append(label);
-
-                            html.append("""
-</option>
-""");
-                        }
-
-                        html.append("""
-</select>
-""");
-
-                    } catch (Exception e) {
-
-                        html.append("""
-Select Error
-""");
+                    for (Object item : items) {
+                        Field idField = item.getClass().getSuperclass().getDeclaredField("id");
+                        idField.setAccessible(true);
+                        Object id = idField.get(item);
+                        Field labelField = item.getClass().getDeclaredField(select.labelField());
+                        labelField.setAccessible(true);
+                        Object label = labelField.get(item);
+                        html.append("<option value='").append(id).append("'>").append(label).append("</option>");
                     }
 
-                } else {
-
-                    html.append("""
-<input type='
-""");
-
-                    html.append(formField.type());
-
-                    html.append("""
-' name='
-""");
-
-                    html.append(field.getName());
-
-                    html.append("""
-' placeholder='
-""");
-
-                    html.append(formField.placeholder());
-
-                    html.append("""
-' 
-""");
-
-                    if (formField.required()) {
-                        html.append("required");
-                    }
-
-                    html.append("""
-/>
-""");
+                    html.append("</select>");
+                } catch (Exception e) {
+                    html.append("Select Error");
                 }
-
-                html.append("""
-</div>
-""");
+            } else {
+                html.append("<input type='").append(formField.type()).append("' name='").append(field.getName())
+                        .append("' placeholder='").append(formField.placeholder()).append("' ")
+                        .append(formField.required() ? "required" : "").append("/>");
             }
+
+            html.append("</div>");
         }
 
-        html.append("""
-<button class='btn'>
-""");
-
-        html.append(form.label());
-
-        html.append("""
-</button>
-
-</form>
-""");
-
+        html.append("<button class='btn'>").append(form.label()).append("</button>").append("</form>");
         return html.toString();
     }
 }

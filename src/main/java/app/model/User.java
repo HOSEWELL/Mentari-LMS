@@ -15,7 +15,7 @@ import jakarta.persistence.*;
 )
 
 @MentariForm(
-        actionUrl = "/app/users/save",
+        actionUrl = "/Mentari/app/users/save",
         label = "Save User"
 )
 public class User extends BaseEntity {

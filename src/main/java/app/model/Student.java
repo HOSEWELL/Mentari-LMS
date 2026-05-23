@@ -12,11 +12,11 @@ import jakarta.persistence.*;
 
 @MentariTableView(
         title = "Students",
-        addAction = "/app/students/list"
+        addAction = "/Mentari/app/students/list"
 )
 
 @MentariForm(
-        actionUrl = "/app/students/save",
+        actionUrl = "/Mentari/app/students/save",
         label = "Register Student"
 )
 public class Student extends BaseEntity {
@@ -52,7 +52,7 @@ public class Student extends BaseEntity {
     @Column(name = "regNumber")
     private String regNumber;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
 
