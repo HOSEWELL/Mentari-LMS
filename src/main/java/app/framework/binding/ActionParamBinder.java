@@ -1,12 +1,13 @@
 package app.framework.binding;
 
 import app.framework.annotation.ActionPathParam;
-import app.framework.annotation.ActionRequestBody;
 import app.framework.annotation.ActionQueryParam;
+import app.framework.annotation.ActionRequestBody;
 import app.framework.routing.ActionMap;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
 import java.util.Map;
@@ -25,16 +26,15 @@ public class ActionParamBinder {
 
             if (parameter.getType() == HttpServletRequest.class) { args[i] = req; continue; }
             if (parameter.getType() == HttpServletResponse.class) { args[i] = resp; continue; }
+            if (parameter.getType() == HttpSession.class) { args[i] = req.getSession(); continue; }
 
             if (parameter.isAnnotationPresent(ActionQueryParam.class)) {
-                String paramName = parameter.getAnnotation(ActionQueryParam.class).value();
-                args[i] = convert(req.getParameter(paramName), parameter.getType());
+                args[i] = convert(req.getParameter(parameter.getAnnotation(ActionQueryParam.class).value()), parameter.getType());
                 continue;
             }
 
             if (parameter.isAnnotationPresent(ActionPathParam.class)) {
-                String paramName = parameter.getAnnotation(ActionPathParam.class).value();
-                args[i] = convert(pathVariables.get(paramName), parameter.getType());
+                args[i] = convert(pathVariables.get(parameter.getAnnotation(ActionPathParam.class).value()), parameter.getType());
                 continue;
             }
 
@@ -45,7 +45,10 @@ public class ActionParamBinder {
                 } else {
                     args[i] = bindForm(req, parameter.getType());
                 }
+                continue;
             }
+
+            args[i] = bindForm(req, parameter.getType());
         }
 
         return args;
@@ -56,6 +59,17 @@ public class ActionParamBinder {
 
         for (Field field : clazz.getDeclaredFields()) {
             field.setAccessible(true);
+            String nestedId = req.getParameter(field.getName() + ".id");
+
+            if (nestedId != null && !nestedId.isBlank()) {
+                Object nestedObject = field.getType().getDeclaredConstructor().newInstance();
+                Field idField = nestedObject.getClass().getSuperclass().getDeclaredField("id");
+                idField.setAccessible(true);
+                idField.set(nestedObject, Long.parseLong(nestedId));
+                field.set(object, nestedObject);
+                continue;
+            }
+
             String value = req.getParameter(field.getName());
             if (value == null || value.isBlank()) continue;
             field.set(object, convert(value, field.getType()));

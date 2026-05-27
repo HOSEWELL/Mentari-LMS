@@ -52,6 +52,9 @@ public class Course extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @OneToMany(mappedBy = "course")
+    private java.util.List<Enrollment> enrollments;
+
     public Course() {
     }
 

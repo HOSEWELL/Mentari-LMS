@@ -57,6 +57,9 @@ public class Student extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @OneToMany(mappedBy = "student")
+    private java.util.List<Enrollment> enrollments;
+
     public Student() {
     }
 

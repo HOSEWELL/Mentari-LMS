@@ -1,7 +1,5 @@
 package app.listener;
 
-import app.utility.helper.ClassScanner;
-
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
@@ -17,13 +15,6 @@ public class AppStartupListener
 
         System.out.println(
                 "********** MENTARI SYSTEM STARTING **********"
-        );
-
-        /*
-         * SCAN ACTIONS
-         */
-        ClassScanner.scanForAction(
-                "app.action"
         );
     }
 

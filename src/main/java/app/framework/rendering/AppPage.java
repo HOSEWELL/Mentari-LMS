@@ -108,8 +108,19 @@ input:focus, select:focus, textarea:focus{ outline:none; border-color:#2563eb; b
             if (!allowed) continue;
 
             String url = switch (action.value()) {
-                case "deferrals" -> "ADMIN".equalsIgnoreCase(currentRole) ? "/Mentari/app/deferrals/admin" : "/Mentari/app/deferrals/student";
-                default -> "/Mentari/app/" + action.value() + "/list";
+
+                case "deferrals" ->
+                        "ADMIN".equalsIgnoreCase(currentRole)
+                                ? "/Mentari/app/deferrals/admin"
+                                : "/Mentari/app/deferrals/student";
+
+                case "enrollments" ->
+                        "ADMIN".equalsIgnoreCase(currentRole)
+                                ? "/Mentari/app/enrollments/list"
+                                : "/Mentari/app/enrollments/student";
+
+                default ->
+                        "/Mentari/app/" + action.value() + "/list";
             };
 
             String activeClass = req.getRequestURI().contains("/" + action.value() + "/") ? "active-link" : "";
