@@ -5,6 +5,7 @@ import app.framework.annotation.MentariFormField;
 import app.framework.annotation.MentariTableColumn;
 import app.framework.annotation.MentariTableView;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -41,6 +42,7 @@ public class User extends BaseEntity {
             type = "password",
             hidden = false
     )
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 

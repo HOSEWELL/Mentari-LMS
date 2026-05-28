@@ -5,6 +5,7 @@ import app.dao.StudentDao;
 import app.dao.UserDao;
 import app.model.Student;
 import app.model.User;
+import app.utility.security.PasswordUtil;
 import app.utility.validation.Validate;
 
 import jakarta.ejb.EJB;
@@ -69,7 +70,9 @@ public class StudentService {
         );
 
         studentUser.setPassword(
-                generatedPassword
+                PasswordUtil.hashPassword(
+                        generatedPassword
+                )
         );
 
         studentUser.setRole(

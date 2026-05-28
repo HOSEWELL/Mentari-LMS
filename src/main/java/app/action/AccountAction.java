@@ -9,6 +9,7 @@ import app.framework.response.ActionResponse;
 import app.framework.response.RedirectResponse;
 import app.model.Student;
 import app.model.User;
+import app.utility.security.PasswordUtil;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -127,7 +128,11 @@ button:hover{ background:#1d4ed8; }
 
             User user = student.getUser();
 
-            user.setPassword(newPassword);
+            user.setPassword(
+                    PasswordUtil.hashPassword(
+                            newPassword
+                    )
+            );
 
             userService.update(user);
 

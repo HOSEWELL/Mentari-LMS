@@ -1,7 +1,9 @@
 package app.rest;
 
 import app.bean.DeferralService;
+import app.framework.annotation.AdminOnly;
 import app.model.Deferral;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ejb.EJB;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -9,6 +11,8 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 @Path("/deferral")
+@Tag(name = "Deferral", description = "Deferral management endpoints")
+
 public class DeferralRestApi {
 
     @EJB
@@ -38,14 +42,18 @@ public class DeferralRestApi {
     @Produces(MediaType.APPLICATION_JSON)
     public long countPending() { return deferralService.countPendingDeferrals(); }
 
-    @Path("/approve/{id}/{studentName}") @PUT
+    @Path("/approve/{id}/{studentName}")
+    @PUT
+    @AdminOnly
     @Produces(MediaType.APPLICATION_JSON)
     public Response approve(@PathParam("id") Long id, @PathParam("studentName") String studentName) {
         deferralService.approve(id, studentName);
         return Response.ok(new ResponseStatus(true, "Deferral approved")).build();
     }
 
-    @Path("/reject/{id}/{studentName}") @PUT
+    @Path("/reject/{id}/{studentName}")
+    @PUT
+    @AdminOnly
     @Produces(MediaType.APPLICATION_JSON)
     public Response reject(@PathParam("id") Long id, @PathParam("studentName") String studentName) {
         deferralService.reject(id, studentName);

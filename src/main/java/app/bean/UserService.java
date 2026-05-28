@@ -2,6 +2,7 @@ package app.bean;
 
 import app.dao.UserDao;
 import app.model.User;
+import app.utility.security.PasswordUtil;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -24,10 +25,21 @@ public class UserService {
         return userDao.findAll();
     }
 
-    public User authenticate(String username, String password) {
-        return findAll().stream()
-                .filter(u -> u.getUsername().equals(username) && u.getPassword().equals(password))
-                .findFirst()
-                .orElse(null);
+    public User authenticate( String username,String password) {
+
+        User user =
+                userDao.findByUsername(username);
+
+        if (user == null) {
+            return null;
+        }
+
+        boolean valid =
+                PasswordUtil.verifyPassword(
+                        password,
+                        user.getPassword()
+                );
+
+        return valid ? user : null;
     }
 }

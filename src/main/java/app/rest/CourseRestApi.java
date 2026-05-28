@@ -1,7 +1,9 @@
 package app.rest;
 
 import app.bean.CourseService;
+import app.framework.annotation.AdminOnly;
 import app.model.Course;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ejb.EJB;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -9,17 +11,22 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 @Path("/course")
+@Tag(name = "Course", description = "Course management endpoints")
+
 public class CourseRestApi {
 
     @EJB
     private CourseService courseService;
 
-    @Path("/save") @POST
+    @Path("/save")
+    @POST
+    @AdminOnly
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response save(Course course) {
         boolean saved = courseService.save(course);
-        if (!saved) return Response.status(Response.Status.BAD_REQUEST).entity(new ResponseStatus(false, "Invalid course data")).build();
+        if (!saved) return Response.status(Response.Status.BAD_REQUEST)
+                .entity(new ResponseStatus(false, "Invalid course data")).build();
         return Response.ok(new ResponseStatus(true, "Course saved successfully")).build();
     }
 
