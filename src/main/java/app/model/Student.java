@@ -57,6 +57,17 @@ public class Student extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Transient
+    private String plainPassword;
+
+    public String getPlainPassword() {
+        return plainPassword;
+    }
+
+    public void setPlainPassword(String plainPassword) {
+        this.plainPassword = plainPassword;
+    }
+
     @OneToMany(mappedBy = "student")
     private java.util.List<Enrollment> enrollments;
 

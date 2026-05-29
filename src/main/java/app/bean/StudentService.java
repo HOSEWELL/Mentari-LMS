@@ -7,13 +7,11 @@ import app.model.Student;
 import app.model.User;
 import app.utility.security.PasswordUtil;
 import app.utility.validation.Validate;
-
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-
 import java.security.SecureRandom;
 import java.util.List;
 
@@ -39,122 +37,75 @@ public class StudentService {
     @EJB
     private AuditTrailBean auditTrailBean;
 
-    private static final String CHARACTERS =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#";
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#";
 
     public boolean enrollStudent(Student student) {
 
-        if (
-                student == null ||
-                        !studentValidator.name(
-                                student.getFullName()
-                        )
-        ) {
-
+        if (student == null || !studentValidator.name(student.getFullName()) ) {
             return false;
         }
 
         /*
-         * GENERATE RANDOM PASSWORD
+         * BLOCK DUPLICATE EMAILS
          */
-        String generatedPassword =
-                generateRandomPassword(10);
+        User existingUser =userDao.findByUsername( student.getEmail());
+        if (existingUser != null) {
+            auditTrailBean.save("Duplicate student registration blocked: "+ student.getEmail() );
+
+            System.out.println( "MENTARI >>> Duplicate email blocked: " + student.getEmail());
+            return false;
+        }
+
+        /*
+         * GENERATE PASSWORD
+         */
+        String generatedPassword = generateRandomPassword(10);
+
+        /*
+         * STORE RAW PASSWORD TEMPORARILY
+         */
+        student.setPlainPassword( generatedPassword);
 
         /*
          * CREATE LOGIN ACCOUNT
          */
-        User studentUser = new User();
+        User studentUser =  new User();
 
-        studentUser.setUsername(
-                student.getEmail()
-        );
+        studentUser.setUsername( student.getEmail() );
 
-        studentUser.setPassword(
-                PasswordUtil.hashPassword(
-                        generatedPassword
-                )
-        );
+        studentUser.setPassword( PasswordUtil.hashPassword( generatedPassword ));
 
-        studentUser.setRole(
-                "STUDENT"
-        );
+        studentUser.setRole("STUDENT");
 
-        User savedUser =
-                userDao.save(studentUser);
+        User savedUser = userDao.save(studentUser);
 
         student.setUser(savedUser);
-
-        /*
-         * SAVE STUDENT PROFILE
-         */
         studentDao.save(student);
 
         /*
-         * FIRE CDI EVENT
+         * SEND EMAIL EVENT
          */
         studentEvent.fire(student);
 
-        /*
-         * AUDIT TRAIL
-         */
-        auditTrailBean.save(
-                "Student enrolled: "
-                        + student.getFullName()
-                        + " ("
-                        + student.getEmail()
-                        + ")"
-        );
+        auditTrailBean.save("Student enrolled: "  + student.getFullName()+ " (" + student.getEmail()+ ")");
 
-        System.out.println(
-                "MENTARI >>> Student enrolled: "
-                        + student.getFullName()
-        );
-
+        System.out.println(  "MENTARI >>> Student enrolled: "+ student.getFullName());
         return true;
     }
 
-    /*
-     * GENERATE PASSWORD
-     */
-    private String generateRandomPassword(
-            int length
-    ) {
-
-        SecureRandom random =
-                new SecureRandom();
-
-        StringBuilder password =
-                new StringBuilder();
-
+    private String generateRandomPassword(int length) {
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder();
         for (int i = 0; i < length; i++) {
-
-            int index = random.nextInt(
-                    CHARACTERS.length()
-            );
-
-            password.append(
-                    CHARACTERS.charAt(index)
-            );
+            password.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
         }
-
         return password.toString();
     }
 
-    /*
-     * UPDATE STUDENT
-     */
-    public Student update(
-            Student student
-    ) {
-
+    public Student update(Student student) {
         return studentDao.update(student);
     }
-
-    /*
-     * FIND ALL
-     */
     public List<Student> findAll() {
-
         return studentDao.findAll();
     }
 }

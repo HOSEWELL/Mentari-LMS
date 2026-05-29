@@ -28,9 +28,9 @@ public class NotificationBean {
                 + "You have been successfully enrolled in Mentari LMS.\n\n"
                 + "Your login credentials:\n"
                 + "  Username: " + student.getEmail() + "\n"
-                + "  Password: " + student.getUser().getPassword() + "\n\n"
+                + "  Password: " + student.getPlainPassword() + "\n\n"
                 + "Please log in and change your password immediately.\n\n"
-                + "Portal: http://localhost:8080/Mentari\n\n"
+                + "Portal: http://localhost:8082/Mentari\n\n"
                 + "Regards,\nMentari LMS by Hosewell";
 
         sendEmail(student.getEmail(), subject, body);

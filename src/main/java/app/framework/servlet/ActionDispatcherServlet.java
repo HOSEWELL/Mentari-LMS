@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Map;
 
 @WebServlet("/app/*")
 public class ActionDispatcherServlet extends HttpServlet {
@@ -27,9 +28,7 @@ public class ActionDispatcherServlet extends HttpServlet {
     private final AppPage appPage = new AppPage();
 
     @Override
-    public void init() {
-        ActionRegistry.scanAndRegister("app.action");
-    }
+    public void init() { ActionRegistry.scanAndRegister("app.action"); }
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -43,7 +42,6 @@ public class ActionDispatcherServlet extends HttpServlet {
         if (parts.length < 2) { resp.getWriter().write("Invalid route"); return; }
 
         String controllerName = parts[0];
-        String methodName = parts[1];
 
         try {
             Class<?> controllerClass = null;
@@ -64,12 +62,13 @@ public class ActionDispatcherServlet extends HttpServlet {
             }
 
             Object controller = CDI.current().select(controllerClass).get();
-            Method targetMethod = findTargetMethod(controllerClass, req.getMethod(), methodName);
+            Method targetMethod = findTargetMethod(controllerClass, req.getMethod(), path);
 
             if (targetMethod == null) { resp.getWriter().write("Method not found"); return; }
 
+            Map<String, String> pathVariables = extractPathVariables(targetMethod, path);
             ActionMap actionMap = new ActionMap(controllerClass, targetMethod, req.getMethod(), path);
-            Object[] args = ActionParamBinder.bind(actionMap, req, resp, new HashMap<>());
+            Object[] args = ActionParamBinder.bind(actionMap, req, resp, pathVariables);
             Object result = targetMethod.invoke(controller, args);
 
             if (result instanceof RedirectResponse redirectResponse) {
@@ -110,17 +109,41 @@ public class ActionDispatcherServlet extends HttpServlet {
         }
     }
 
-    private Method findTargetMethod(Class<?> controllerClass, String httpMethod, String methodName) {
+    private Method findTargetMethod(Class<?> controllerClass, String httpMethod, String fullPath) {
+        String[] requestParts = fullPath.substring(1).split("/");
+        if (requestParts.length < 2) return null;
+        String requestRoute = requestParts[1];
+
         for (Method method : controllerClass.getDeclaredMethods()) {
             if (httpMethod.equalsIgnoreCase("GET") && method.isAnnotationPresent(ActionGetMethod.class)) {
-                String route = method.getAnnotation(ActionGetMethod.class).value();
-                if (route.equals(methodName) || route.startsWith(methodName + "/{")) return method;
+                if (matchesRoute(method.getAnnotation(ActionGetMethod.class).value(), requestRoute, requestParts)) return method;
             }
             if (httpMethod.equalsIgnoreCase("POST") && method.isAnnotationPresent(ActionPostMethod.class)) {
-                String route = method.getAnnotation(ActionPostMethod.class).value();
-                if (route.equals(methodName) || route.startsWith(methodName + "/{")) return method;
+                if (matchesRoute(method.getAnnotation(ActionPostMethod.class).value(), requestRoute, requestParts)) return method;
             }
         }
         return null;
+    }
+
+    private boolean matchesRoute(String route, String requestRoute, String[] requestParts) {
+        return route.equals(requestRoute) || (route.contains("{") && requestParts.length > 2 && route.startsWith(requestRoute + "/{"));
+    }
+
+    private Map<String, String> extractPathVariables(Method method, String fullPath) {
+        Map<String, String> variables = new HashMap<>();
+        String[] requestParts = fullPath.substring(1).split("/");
+
+        String route = "";
+        if (method.isAnnotationPresent(ActionGetMethod.class)) route = method.getAnnotation(ActionGetMethod.class).value();
+        if (method.isAnnotationPresent(ActionPostMethod.class)) route = method.getAnnotation(ActionPostMethod.class).value();
+
+        String[] routeParts = route.split("/");
+        for (int i = 0; i < routeParts.length; i++) {
+            String part = routeParts[i];
+            if (part.startsWith("{") && part.endsWith("}")) {
+                variables.put(part.substring(1, part.length() - 1), requestParts[i + 1]);
+            }
+        }
+        return variables;
     }
 }

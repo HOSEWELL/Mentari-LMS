@@ -79,12 +79,39 @@ public class ActionParamBinder {
     }
 
     private static Object convert(String value, Class<?> type) {
-        if (value == null) return null;
-        if (type == String.class) return value;
-        if (type == Long.class || type == long.class) return Long.parseLong(value);
-        if (type == Integer.class || type == int.class) return Integer.parseInt(value);
-        if (type == Double.class || type == double.class) return Double.parseDouble(value);
-        if (type == Boolean.class || type == boolean.class) return Boolean.parseBoolean(value);
+
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        if (type == String.class) {
+            return value;
+        }
+
+        if (type == Long.class || type == long.class) {
+            return Long.parseLong(value);
+        }
+
+        if (type == Integer.class || type == int.class) {
+            return Integer.parseInt(value);
+        }
+
+        if (type == Double.class || type == double.class) {
+            return Double.parseDouble(value);
+        }
+
+        if (type == Boolean.class || type == boolean.class) {
+            return Boolean.parseBoolean(value);
+        }
+
+        if (type == java.time.LocalDate.class) {
+            return java.time.LocalDate.parse(value);
+        }
+
+        if (type == java.time.LocalDateTime.class) {
+            return java.time.LocalDateTime.parse(value);
+        }
+
         return value;
     }
 }
